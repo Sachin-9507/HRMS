@@ -2,6 +2,9 @@ venv/
 .venv/
 _pycache_/
 *.pyc
+.env
+.env.*
+!.env.example
 .vscode/
 .idea/
 *.log
