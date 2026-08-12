@@ -1,0 +1,6 @@
+API_V1_PREFIX = "/api/v1"
+
+PROJECT_NAME = "HRMS"
+
+API_VERSION = "1.0.0"
+

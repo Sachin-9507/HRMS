@@ -1,0 +1,22 @@
+CREATE TABLE IF NOT EXISTS users (
+    id BIGSERIAL PRIMARY KEY,
+       email VARCHAR(100) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    phone_number VARCHAR(20),
+    role_id BIGINT NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    is_email_verified BOOLEAN NOT NULL DEFAULT FALSE,
+    is_2fa_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    failed_login_attempts INT NOT NULL DEFAULT 0,
+    locked_until TIMESTAMP WITH TIME ZONE,
+    last_login TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_role
+     FOREIGN KEY (role_id)
+      REFERENCES roles(id)
+       ON DELETE CASCADE
+    
+);

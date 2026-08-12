@@ -1,0 +1,18 @@
+CREATE TABLE IF NOT EXISTS permissions (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    resource VARCHAR(255) NOT NULL,
+    action VARCHAR(255) NOT NULL,
+    description VARCHAR(255) ,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_permission_resource_action UNIQUE (resource, action)
+);
+
+
+
+
+
+
+
+

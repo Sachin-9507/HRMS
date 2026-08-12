@@ -1,0 +1,14 @@
+CREATE TABLE IF NOT EXISTS users_otps (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    otp_code_hash VARCHAR(255) NOT NULL,
+   purpose VARCHAR(50) NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    attempts INT NOT NULL DEFAULT 0,
+    id_used BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_user_otps_user
+     FOREIGN KEY (user_id)
+      REFERENCES users(id)
+       ON DELETE CASCADE
+);
