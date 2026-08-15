@@ -1,18 +1,21 @@
 from contextlib import contextmanager
 
-from app.database.connection import connection
+from app.database.connection import get_connection
 
 
 @contextmanager
 def get_cursor():
-   
-   try:
-      cursor = connection.cursor()
-      yield cursor
-      connection.commit()
+    connection = get_connection()
+    cursor = connection.cursor()
 
-   except Exception:
+    try:
+        yield cursor
+        connection.commit()
+
+    except Exception:
         connection.rollback()
         raise
-   finally:
+
+    finally:
         cursor.close()
+        connection.close()

@@ -9,8 +9,10 @@ from app.repositories.employee_repository import (
 )
 
 from app.services.employee_service import (
-    create_new_employee
+    create_employee_account
 )
+
+from app.schemas.employee import EmployeeCreateRequest
 
 
 router = APIRouter(
@@ -18,12 +20,13 @@ router = APIRouter(
     tags=["Employee"]
 )
 
+
 @router.get(
     "",
     dependencies=[
         Depends(
             require_permission(
-                "employee.read"
+                "employee:read"
             )
         )
     ]
@@ -56,14 +59,15 @@ def list_employee():
 
     return {
         "employee": result
-    } 
+    }
+
 
 @router.get(
     "/{employee_id}",
     dependencies=[
         Depends(
             require_permission(
-                "employee.read"
+                "employee:read"
             )
         )
     ]
@@ -113,12 +117,13 @@ def get_employee(
         "updated_at": employee[26]
     }
 
+
 @router.patch(
     "/{employee_id}/deactivate",
     dependencies=[
         Depends(
             require_permission(
-                "employee.update"
+                "employee:update"
             )
         )
     ]
@@ -158,7 +163,7 @@ def deactivate_employee_api(
         )
     ]
 )
-def create_employee_api(
+def create_employee(
     employee_code: str,
     first_name: str,
     last_name: str,
@@ -166,37 +171,44 @@ def create_employee_api(
     joining_date: str,
     employment_type: str,
     phone: str | None = None,
+    date_of_birth: str | None = None,
+    gender: str | None = None,
+    address: str | None = None,
+    city: str | None = None,
+    state: str | None = None,
+    country: str | None = None,
+    postal_code: str | None = None,
     department_id: int | None = None,
     designation_id: int | None = None,
     manager_id: int | None = None,
-    salary: float | None = None
+    salary: float | None = None,
+    emergency_contact_name: str | None = None,
+    emergency_contact_phone: str | None = None,
 ):
 
-    employee = create_new_employee(
+    employee_data = EmployeeCreateRequest(
         employee_code=employee_code,
-        user_id=None,
         first_name=first_name,
         last_name=last_name,
         email=email,
-        phone=phone,
-        date_of_birth=None,
-        gender=None,
-        address=None,
-        city=None,
-        state=None,
-        country=None,
-        postal_code=None,
         joining_date=joining_date,
-        employment_type=employment_type.upper(),
+        employment_type=employment_type,
+        phone=phone,
+        date_of_birth=date_of_birth,
+        gender=gender,
+        address=address,
+        city=city,
+        state=state,
+        country=country,
+        postal_code=postal_code,
         department_id=department_id,
         designation_id=designation_id,
         manager_id=manager_id,
         salary=salary,
-        emergency_contact_name=None,
-        emergency_contact_phone=None
+        emergency_contact_name=emergency_contact_name,
+        emergency_contact_phone=emergency_contact_phone,
     )
 
-    return { 
-        "message": "Employee created successfully",
-        "employee": employee
-    }
+    return create_employee_account(
+        employee_data=employee_data
+    )

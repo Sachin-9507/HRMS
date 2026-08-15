@@ -1,4 +1,5 @@
 from app.database.db import get_cursor
+from app.auth.password import hash_password 
 
 
 def get_user_by_email(email):
@@ -307,3 +308,68 @@ def get_user_by_id(user_id: int):
         )
 
         return cursor.fetchone()
+
+def get_employee_role():
+
+    query = """
+        SELECT
+            id,
+            name
+        FROM roles
+        WHERE name = 'Employee'
+          AND is_active = TRUE
+        LIMIT 1;
+    """
+
+    with get_cursor() as cursor:
+
+        cursor.execute(query)
+
+        return cursor.fetchone()
+
+def create_user(
+    email: str,
+    password_hash: str,
+    role_id: int
+):
+
+    query = """
+        INSERT INTO users (
+            email,
+            password_hash,
+            role_id,
+            is_active,
+            is_email_verified,
+            is_2fa_enabled,
+            must_change_password
+        )
+        VALUES (
+            %s,
+            %s,
+            %s,
+            TRUE,
+            FALSE,
+            TRUE,
+            TRUE
+        )
+        RETURNING
+            id,
+            email,
+            role_id,
+            is_active,
+            is_2fa_enabled,
+            must_change_password;
+    """
+
+    with get_cursor() as cursor:
+
+        cursor.execute(
+            query,
+            (
+                email,
+                password_hash,
+                role_id
+            )
+        )
+
+        return cursor.fetchone()  

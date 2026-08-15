@@ -287,3 +287,122 @@ def deactivate_employee(employee_id: int):
 
 
 
+def create_employee_account(
+    user_email,
+    password_hash,
+    role_id,
+    employee_code,
+    first_name,
+    last_name,
+    phone,
+    date_of_birth,
+    gender,
+    address,
+    city,
+    state,
+    country,
+    postal_code,
+    joining_date,
+    employment_type,
+    department_id,
+    designation_id,
+    manager_id,
+    salary,
+    emergency_contact_name,
+    emergency_contact_phone
+):
+    user_query = """
+        INSERT INTO users (email, password_hash, first_name, last_name, phone_number, role_id)
+        VALUES (%s, %s, %s, %s, %s, %s)
+        RETURNING id;
+    """
+
+    employee_query = """
+        INSERT INTO employees (
+            employee_code,
+            user_id,
+            first_name,
+            last_name,
+            email,
+            phone,
+            date_of_birth,
+            gender,
+            address,
+            city,
+            state,
+            country,
+            postal_code,
+            joining_date,
+            employment_type,
+            department_id,
+            designation_id,
+            manager_id,
+            salary,
+            emergency_contact_name,
+            emergency_contact_phone
+        )
+        VALUES (
+            %s, %s, %s, %s, %s,
+            %s, %s, %s, %s, %s,
+            %s, %s, %s, %s, %s,
+            %s, %s, %s, %s, %s,
+            %s
+        )
+        RETURNING
+            id,
+            employee_code,
+            user_id,
+            first_name,
+            last_name,
+            email,
+            employment_status,
+            created_at;
+    """
+
+    with get_cursor() as cursor:
+        # 1. Create user
+        cursor.execute(
+            user_query,
+            (
+                user_email,
+                password_hash,
+                first_name,
+                last_name,
+                phone,
+                role_id,
+            )
+        )
+
+        user_id = cursor.fetchone()[0]
+
+        # 2. Create employee
+        cursor.execute(
+            employee_query,
+            (
+                employee_code,
+                user_id,
+                first_name,
+                last_name,
+                user_email,
+                phone,
+                date_of_birth,
+                gender,
+                address,
+                city,
+                state,
+                country,
+                postal_code,
+                joining_date,
+                employment_type,
+                department_id,
+                designation_id,
+                manager_id,
+                salary,
+                emergency_contact_name,
+                emergency_contact_phone,
+            )
+        )
+
+        employee = cursor.fetchone()
+
+        return user_id, employee
