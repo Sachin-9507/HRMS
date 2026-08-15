@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.endpoints import auth
 from app.api.v1.endpoints import admin
 from app.api.v1.endpoints.roles import router as roles_router
+from app.api.v1.endpoints.employee import  router as employee_router
 
 app = FastAPI(
     title="HRMS API",
@@ -33,6 +34,11 @@ app.include_router(
     roles_router,
     prefix="/api/v1"
 ) 
+
+app.include_router(
+    employee_router,
+    prefix="/api/v1"
+)
 
 @app.get("/")
 def root():
