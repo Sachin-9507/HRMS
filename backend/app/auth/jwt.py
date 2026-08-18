@@ -1,133 +1,85 @@
-import os
-import secrets
-
-import jwt
-
 from datetime import datetime, timedelta, timezone
 
-from dotenv import load_dotenv
+
+from jose import jwt ,JWTError
+  
+
+from core.config import settings
 
 
-load_dotenv()
-
-
-SECRET_KEY = os.getenv("SECRET_KEY")
-
-ALGORITHM = os.getenv(
-    "JWT_ALGORITHM",
-    "HS256"
-)
-
-ACCESS_TOKEN_EXPIRE_MINUTES = int(
-    os.getenv(
-        "ACCESS_TOKEN_EXPIRE_MINUTES",
-        "30"
-    )
-)
-
-REFRESH_TOKEN_EXPIRE_DAYS = int(
-    os.getenv(
-        "REFRESH_TOKEN_EXPIRE_DAYS",
-        "7"
-    )
-)
-
-
-if not SECRET_KEY:
-    raise RuntimeError(
-        "SECRET_KEY is not configured"
-    )
-
-
+ALGORITHM = "HS256"
 
 
 def create_access_token(
-    user_id: int,
-    email: str,
-    role_id: int
+    data: dict,
+    expires_minutes: int = 30,
 ) -> str:
 
-    now = datetime.now(timezone.utc)
+    payload = data.copy()
 
-    expires_at = (
-        now +
-        timedelta(
-            minutes=ACCESS_TOKEN_EXPIRE_MINUTES
-        )
-    )
-
-    payload = {
-        "sub": str(user_id),
-        "email": email,
-        "role_id": role_id,
-        "type": "access",
-        "iat": now,
-        "exp": expires_at
-    }
-
-    token = jwt.encode(
-        payload,
-        SECRET_KEY,
-        algorithm=ALGORITHM
-    )
-
-    return token
-
-
-def create_refresh_token() -> tuple[str, str]:
-
-    token = secrets.token_urlsafe(64)
-
-    token_hash = hash_refresh_token(token)
-
-    return token, token_hash
-
-
-import hashlib
-
-
-def hash_refresh_token(token: str) -> str:
-
-    return hashlib.sha256(
-        token.encode("utf-8")
-    ).hexdigest() 
-
-
-
-def get_refresh_token_expiry():
-
-    return (
+    payload["exp"] = (
         datetime.now(timezone.utc)
-        +
-        timedelta(
-            days=REFRESH_TOKEN_EXPIRE_DAYS
-        )
+        + timedelta(minutes=expires_minutes)
     )
 
+    payload["type"] = "access"
 
+    return jwt.encode(
+        payload,
+        settings.jwt_secret,
+        algorithm=ALGORITHM,
+    )
 
-def decode_access_token(token: str):
-
+def decode_access_token(token: str) -> dict:
     try:
-
         payload = jwt.decode(
             token,
-            SECRET_KEY,
+            settings.jwt_secret,
             algorithms=[ALGORITHM]
         )
 
         if payload.get("type") != "access":
-            return None
+            raise JWTError("Invalid access token")
 
         return payload
 
-    except jwt.ExpiredSignatureError:
-
-        return None
-
-    except jwt.InvalidTokenError:
-
-        return None
+    except JWTError:
+        raise JWTError("Invalid access token")
 
 
-    
+
+
+
+   
+
+def create_refresh_token(
+    data: dict,
+    expires_days: int = 7,
+) -> str:
+
+    payload = data.copy()
+
+    payload["exp"] = (
+        datetime.now(timezone.utc)
+        + timedelta(days=expires_days)
+    )
+
+    payload["type"] = "refresh"
+
+    return jwt.encode(
+        payload,
+        settings.jwt_secret,
+        algorithm=ALGORITHM,
+    )
+
+
+
+
+
+def get_refresh_token_expiry(
+    expires_days: int = 7,
+) -> datetime:
+ return (
+        datetime.now(timezone.utc)
+        + timedelta(days=expires_days)
+    )

@@ -1,21 +1,44 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException
+import json
+from pydantic import BaseModel, Field
+from pyotp import TOTP, random_base32
 
-from app.services.auth_service import (
+from core.deps import get_current_user
+from app.schemas.auth import (
+    RegisterRequest,
+    LoginRequest,
+    Verify2FARequest
+)
+
+from app.services.auth_service import ( 
     register_user,
-    start_login
+    start_login,
+    verify_login_2fa,
+    generate_secrets,
+    get_user_by_id,
+    generate_backup_codes,
+    save_two_factor_secret,
+    confirm_two_factor,
 )
 
-from app.services.auth_service import (
-    complete_2fa_login
-)
+
+def generate_secret() -> str:
+    return random_base32()
+
+def verify_totp(secret: str, code: str) -> bool:
+    return TOTP(secret).verify(code)
+
+def get_provisioning_uri(email: str, secret: str, issuer: str) -> str:
+    return TOTP(secret).provisioning_uri(name=email, issuer_name=issuer)
+
 
 router = APIRouter(
     prefix="/Auth",
-    tags=["Authentication"] 
+    tags=["Authentication"]
 )
 
 
-@router.post("/register")
+@router.post("/register", summary="Register")
 def register(
     email: str,
     password: str,
@@ -23,8 +46,7 @@ def register(
     last_name: str,
     phone: str | None = None
 ):
-
-    user = register_user(
+    return register_user(
         email=email,
         password=password,
         first_name=first_name,
@@ -45,44 +67,93 @@ def register(
     }
 
 
-@router.post("/login")
+@router.post("/login", summary="login")
 def login(
     email: str,
     password: str
 ):
 
-    result = start_login(
-        email=email,
-        password=password
-    )
+    
 
-    return result
+        return start_login(
+            email=email,
+            password=password
+        )
 
+       
 
-from app.services.otp_service import (
-    create_login_otp,
-    verify_login_otp
-)
-
-from app.services.auth_service import (
-    start_login,
-    complete_2fa_login 
-
-)
-
-@router.post("/verify-otp")
-def verify_otp_endpoint(
+@router.post("/verify-2fa")
+def verify_2fa(
     user_id: int,
-    otp: str
+    code: str
 ):
-
-    result = complete_2fa_login(
+    return verify_login_2fa(
         user_id=user_id,
-        otp=otp
+        code=code
     )
 
-    if not result["success"]:
+@router.post("/2fa/setup")
+def setup_2fa(
+    current_user=Depends(get_current_user)
+):
+    secret = generate_secret()
 
-        return result
+    save_two_factor_secret(
+        current_user[0],
+        secret
+    )
 
-    return result 
+    uri = get_provisioning_uri(
+        email=current_user[1],
+        secret=secret,
+        issuer="HRMS"
+    )
+
+    return {
+        "secret": secret,
+        "provisioning_uri": uri
+    }
+
+@router.post("/2fa/verify-setup")
+def verify_2fa_setup(
+    code: str,
+    current_user=Depends(get_current_user)
+):
+    user = get_user_by_id(
+        current_user[0]
+    )
+
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found"
+        )
+
+    secret = user[10]
+
+    if not secret:
+        raise HTTPException(
+            status_code=400,
+            detail="2FA secret is not configured"
+        )
+
+    if not verify_totp(
+        secret,
+        code
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid authentication code"
+        )
+
+    backup_codes = generate_backup_codes()
+
+    confirm_two_factor(
+        current_user[0],
+        json.dumps(backup_codes)
+    )
+
+    return {
+        "message": "2FA enabled successfully",
+        "backup_codes": backup_codes
+    }

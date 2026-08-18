@@ -49,5 +49,29 @@ def verify_otp(
 
     return verify_password(
         otp,
-        otp_hash
+        otp_hash,
+    )
+
+import hashlib
+import secrets
+
+
+def generate_otp() -> str:
+    return f"{secrets.randbelow(1000000):06d}"
+
+
+def hash_otp(otp: str) -> str:
+    return hashlib.sha256(
+        otp.encode("utf-8")
+    ).hexdigest()
+
+
+def verify_otp(
+    otp: str,
+    otp_hash: str
+) -> bool:
+
+    return (
+        hash_otp(otp)
+        == otp_hash
     )

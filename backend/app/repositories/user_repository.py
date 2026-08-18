@@ -198,13 +198,10 @@ def get_latest_otp(
     query = """
     SELECT
         id,
-        user_id,
         otp_code_hash,
-        purpose,
         expires_at,
         attempts,
-        id_used,
-        created_at
+        id_used
     FROM users_otps
     WHERE user_id = %s
       AND purpose = %s
@@ -291,6 +288,7 @@ def get_user_by_id(user_id: int):
         is_active,
         is_email_verified,
         is_2fa_enabled,
+        two_factor_secret,
         failed_login_attempts,
         locked_until,
         last_login,
@@ -327,38 +325,61 @@ def get_employee_role():
 
         return cursor.fetchone()
 
-def create_user(
-    email: str,
-    password_hash: str,
-    role_id: int
+def get_user_auth_data(
+    email: str
 ):
 
     query = """
-        INSERT INTO users (
-            email,
-            password_hash,
-            role_id,
-            is_active,
-            is_email_verified,
-            is_2fa_enabled,
-            must_change_password
+        SELECT
+            u.id,
+            u.email,
+            u.password_hash,
+            u.role_id,
+            u.is_active,
+            u.is_email_verified,
+            u.is_2fa_enabled,
+            u.two_factor_secret,
+            u.two_factor_verified,
+            u.two_factor_backup_codes,
+            u.must_change_password
+        FROM users u
+        WHERE u.email = %s
+        LIMIT 1;
+    """
+
+    with get_cursor() as cursor:
+
+        cursor.execute(
+            query,
+            (email,)
         )
-        VALUES (
-            %s,
-            %s,
-            %s,
-            TRUE,
-            FALSE,
-            TRUE,
-            TRUE
-        )
+
+        return cursor.fetchone()
+
+def update_password(
+    user_id: int,
+    password_hash: str
+):
+
+    query = """
+        UPDATE users
+
+        SET
+            password_hash = %s,
+            must_change_password = FALSE,
+            password_changed_at = CURRENT_TIMESTAMP,
+            password_expires_at =
+                CURRENT_TIMESTAMP
+                + INTERVAL '90 days'
+
+        WHERE id = %s
+
         RETURNING
             id,
             email,
-            role_id,
-            is_active,
-            is_2fa_enabled,
-            must_change_password;
+            must_change_password,
+            password_changed_at,
+            password_expires_at;
     """
 
     with get_cursor() as cursor:
@@ -366,10 +387,75 @@ def create_user(
         cursor.execute(
             query,
             (
-                email,
                 password_hash,
-                role_id
+                user_id
             )
         )
 
-        return cursor.fetchone()  
+        return cursor.fetchone() 
+
+def save_two_factor_secret(
+    user_id: int,
+    secret: str
+):
+
+    query = """
+        UPDATE users
+
+        SET
+            two_factor_secret = %s,
+            two_factor_verified = FALSE
+
+        WHERE id = %s
+
+        RETURNING
+            id,
+            email,
+            two_factor_secret;
+    """
+
+    with get_cursor() as cursor:
+
+        cursor.execute(
+            query,
+            (
+                secret,
+                user_id
+            )
+        )
+
+        return cursor.fetchone()
+
+def confirm_two_factor(
+    user_id: int,
+    backup_codes: str
+):
+
+    query = """
+        UPDATE users
+
+        SET
+            is_2fa_enabled = TRUE,
+            two_factor_verified = TRUE,
+            two_factor_backup_codes = %s
+
+        WHERE id = %s
+
+        RETURNING
+            id,
+            email,
+            is_2fa_enabled,
+            two_factor_verified;
+    """
+
+    with get_cursor() as cursor:
+
+        cursor.execute(
+            query,
+            (
+                backup_codes,
+                user_id
+            )
+        )
+
+        return cursor.fetchone()
