@@ -1,12 +1,11 @@
 from fastapi import APIRouter, HTTPException, Depends
-from typing import Any
 from app.auth.dependencies import get_current_user
 
 from app.repositories.admin_repository import (
     get_all_users,
     get_user_details,
     set_user_active,
-    change_user_role,
+    change_user_role as change_user_role_repository,
 )
 
 router = APIRouter(
@@ -70,7 +69,7 @@ def change_user_role(
     user_id: int,
     role_id: int,
 ):
-    result = change_user_role(
+    result = change_user_role_repository(
         user_id=user_id,
         role_id=role_id,
     )

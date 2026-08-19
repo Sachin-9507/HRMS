@@ -110,6 +110,7 @@ def change_user_role(
                 user_id
             )
         )
+        result = cursor.fetchone()
      return cursor.fetchone()
 
     

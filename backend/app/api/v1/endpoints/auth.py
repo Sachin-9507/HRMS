@@ -38,7 +38,7 @@ router = APIRouter(
 )
 
 
-@router.post("/register", summary="Register")
+@router.post("/register", summary=" ")
 def register(
     email: str,
     password: str,
@@ -67,7 +67,7 @@ def register(
     }
 
 
-@router.post("/login", summary="login")
+@router.post("/login", summary=" ")
 def login(
     email: str,
     password: str
@@ -82,7 +82,7 @@ def login(
 
        
 
-@router.post("/verify-2fa")
+@router.post("/verify-2fa", summary=" ")
 def verify_2fa(
     user_id: int,
     code: str
@@ -92,7 +92,7 @@ def verify_2fa(
         code=code
     )
 
-@router.post("/2fa/setup")
+@router.post("/2fa/setup", summary=" ")
 def setup_2fa(
     current_user=Depends(get_current_user)
 ):
@@ -114,7 +114,7 @@ def setup_2fa(
         "provisioning_uri": uri
     }
 
-@router.post("/2fa/verify-setup")
+@router.post("/2fa/verify-setup", summary=" ")
 def verify_2fa_setup(
     code: str,
     current_user=Depends(get_current_user)

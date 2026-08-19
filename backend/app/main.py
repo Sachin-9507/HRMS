@@ -6,6 +6,14 @@ from app.api.v1.endpoints import admin
 from app.api.v1.endpoints.roles import router as roles_router
 from app.api.v1.endpoints.employee import  router as employee_router
 
+from app.api.v1.endpoints.departments import (
+    router as department_router
+)
+
+from app.api.v1.endpoints.designations import (
+    router as designation_router
+)
+
 app = FastAPI(
     title="HRMS API",
     version="1.0.0",
@@ -53,3 +61,13 @@ def health_check():
     return {
         "status": "healthy"
     }
+
+app.include_router(
+    department_router,
+    prefix="/api/v1"
+)
+
+app.include_router(
+    designation_router,
+    prefix="/api/v1"
+)

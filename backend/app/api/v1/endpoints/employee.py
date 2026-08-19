@@ -128,7 +128,7 @@ def get_employee(
         )
     ]
 )
-def deactivate_employee_api(
+def deactivate_employee(
     employee_id: int
 ):
 
