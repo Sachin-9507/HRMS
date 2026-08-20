@@ -62,8 +62,17 @@ def create_employee(
             first_name,
             last_name,
             email,
+            phone,
+            date_of_birth,
+            gender,
+            joining_date,
+            department_id,
+            designation_id,
+            manager_id,
+            employment_type,
             employment_status,
-            created_at;
+            created_at,
+            updated_at;
     """
 
     values = (
@@ -406,3 +415,276 @@ def create_employee_account(
         employee = cursor.fetchone()
 
         return user_id, employee
+
+    from app.database.db import get_cursor
+
+
+def get_employee_by_user_id(
+    user_id: int
+):
+
+    query = """
+        SELECT
+            e.id,
+            e.employee_code,
+            e.user_id,
+            e.first_name,
+            e.last_name,
+            e.email,
+            e.phone,
+            e.date_of_birth,
+            e.gender,
+            e.joining_date,
+
+            e.department_id,
+            d.name AS department_name,
+
+            e.designation_id,
+            ds.name AS designation_name,
+
+            e.manager_id,
+
+            CONCAT(
+                m.first_name,
+                ' ',
+                COALESCE(m.last_name, '')
+            ) AS manager_name,
+
+            e.employment_type,
+            e.status
+
+        FROM employees e
+
+        LEFT JOIN departments d
+            ON d.id = e.department_id
+
+        LEFT JOIN designations ds
+            ON ds.id = e.designation_id
+
+        LEFT JOIN employees m
+            ON m.id = e.manager_id
+
+        WHERE e.user_id = %s;
+    """
+
+    with get_cursor() as cursor:
+
+        cursor.execute(
+            query,
+            (user_id,)
+        )
+
+        return cursor.fetchone()
+
+
+
+
+def get_employees(
+    search=None,
+    department_id=None,
+    designation_id=None,
+    status=None,
+    page=1,
+    page_size=20
+):
+
+    offset = (
+        page - 1
+    ) * page_size
+
+    query = """
+        SELECT
+            e.id,
+            e.employee_code,
+            e.user_id,
+            e.first_name,
+            e.last_name,
+            e.email,
+            e.phone,
+
+            e.department_id,
+            d.name AS department_name,
+
+            e.designation_id,
+            ds.name AS designation_name,
+
+            e.manager_id,
+
+            CONCAT(
+                m.first_name,
+                ' ',
+                COALESCE(m.last_name, '')
+            ) AS manager_name,
+
+            e.joining_date,
+            e.employment_type,
+            e.employment_status
+
+        FROM employees e
+
+        LEFT JOIN departments d
+            ON d.id = e.department_id
+
+        LEFT JOIN designations ds
+            ON ds.id = e.designation_id
+
+        LEFT JOIN employees m
+            ON m.id = e.manager_id
+
+        WHERE 1 = 1
+    """
+
+    params = []
+
+    if search:
+
+        query += """
+            AND (
+                e.employee_code ILIKE %s
+                OR e.first_name ILIKE %s
+                OR e.last_name ILIKE %s
+                OR e.email ILIKE %s
+            )
+        """
+
+        search_value = f"%{search}%"
+
+        params.extend([
+            search_value,
+            search_value,
+            search_value,
+            search_value
+        ])
+
+    if department_id:
+
+        query += """
+            AND e.department_id = %s
+        """
+
+        params.append(
+            department_id
+        )
+
+    if designation_id:
+
+        query += """
+            AND e.designation_id = %s
+        """
+
+        params.append(
+            designation_id
+        )
+
+    if status:
+
+        query += """
+            AND e.employment_status = %s
+        """
+
+        params.append(
+            status
+        )
+
+    query += """
+        ORDER BY e.id DESC
+
+        LIMIT %s
+        OFFSET %s;
+    """
+
+    params.extend([
+        page_size,
+        offset
+    ])
+
+    with get_cursor() as cursor:
+
+        cursor.execute(
+            query,
+            tuple(params)
+        )
+
+        return cursor.fetchall()
+
+
+
+def count_employees(
+    search=None,
+    department_id=None,
+    designation_id=None,
+    status=None
+):
+
+    query = """
+        SELECT COUNT(*)
+
+        FROM employees e
+
+        WHERE 1 = 1
+    """
+
+    params = []
+
+    if search:
+
+        query += """
+            AND (
+                e.employee_code ILIKE %s
+                OR e.first_name ILIKE %s
+                OR e.last_name ILIKE %s
+                OR e.email ILIKE %s
+            )
+        """
+
+        search_value = f"%{search}%"
+
+        params.extend([
+            search_value,
+            search_value,
+            search_value,
+            search_value
+        ])
+
+    if department_id:
+
+        query += """
+            AND e.department_id = %s
+        """
+
+        params.append(
+            department_id
+        )
+
+    if designation_id:
+
+        query += """
+            AND e.designation_id = %s
+        """
+
+        params.append(
+            designation_id
+        )
+
+    if status:
+
+        query += """
+            AND e.employment_status = %s
+        """
+
+        params.append(
+            status
+        )
+
+    with get_cursor() as cursor:
+
+        cursor.execute(
+            query,
+            tuple(params)
+        )
+
+        result = cursor.fetchone()
+
+        return result[0]
+
+

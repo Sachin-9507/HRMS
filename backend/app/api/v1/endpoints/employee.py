@@ -1,24 +1,44 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.auth.rbac import require_permission
 
 from app.repositories.employee_repository import (
     get_all_employee,
     get_employee_by_id,
-    deactivate_employee
+    deactivate_employee as repository_deactivate_employee
 )
 
 from app.services.employee_service import (
     create_employee_account
 )
 
-from app.schemas.employee import EmployeeCreateRequest
+
+from app.auth.jwt import (
+    get_current_user
+)
+
+from app.schemas.employee import (
+    EmployeeCreateRequest,
+    EmployeeUpdateRequest
+)
+
+from app.services.employee_service import (
+    create_new_employee
+)
+
+
+from app.services.employee_service import (
+    list_employees,
+    get_employee,
+    get_current_employee
+)
 
 
 router = APIRouter(
-    prefix="/employee",
-    tags=["Employee"]
+    prefix="/employees",
+    tags=["Employees"]
 )
+
 
 
 @router.get(
@@ -31,36 +51,35 @@ router = APIRouter(
         )
     ]
 )
-def list_employee():
+def list_employee_api(
+    search: str | None = None,
 
-    employees = get_all_employee()
+    department_id: int | None = None,
 
-    result = []
+    designation_id: int | None = None,
 
-    for employee in employees:
+    status: str | None = None,
 
-        result.append({
-            "id": employee[0],
-            "employee_code": employee[1],
-            "user_id": employee[2],
-            "first_name": employee[3],
-            "last_name": employee[4],
-            "email": employee[5],
-            "phone": employee[6],
-            "joining_date": employee[7],
-            "employment_type": employee[8],
-            "department": employee[9],
-            "designation": employee[10],
-            "manager_id": employee[11],
-            "salary": employee[12],
-            "employment_status": employee[13],
-            "created_at": employee[14]
-        })
+    page: int = Query(
+        default=1,
+        ge=1
+    ),
 
-    return {
-        "employee": result
-    }
+    page_size: int = Query(
+        default=20,
+        ge=1,
+        le=100
+    )
+):
 
+    return list_employees(
+        search=search,
+        department_id=department_id,
+        designation_id=designation_id,
+        status=status,
+        page=page,
+        page_size=page_size
+    )
 
 @router.get(
     "/{employee_id}",
@@ -72,7 +91,7 @@ def list_employee():
         )
     ]
 )
-def get_employee(
+def get_employee_api(
     employee_id: int
 ):
 
@@ -132,7 +151,7 @@ def deactivate_employee(
     employee_id: int
 ):
 
-    employee = deactivate_employee(
+    employee = repository_deactivate_employee(
         employee_id
     )
 
@@ -212,3 +231,35 @@ def create_employee(
     return create_employee_account(
         employee_data=employee_data
     )
+
+
+@router.get(
+    "/me"
+)
+def get_my_employee_profile(
+    current_user=Depends(
+        get_current_user
+    )
+):
+
+    try:
+
+        user_id = current_user["user_id"]
+
+        employee = (
+            get_current_employee(
+                user_id
+            )
+        )
+
+        return {
+            "employee":
+                employee
+        }
+
+    except ValueError as error:
+
+        raise HTTPException(
+            status_code=404,
+            detail=str(error)
+        )

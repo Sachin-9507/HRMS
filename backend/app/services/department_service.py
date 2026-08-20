@@ -7,6 +7,22 @@ from app.repositories.department_repository import (
 )
 
 
+def department_to_dict(department):
+
+    if not department:
+        return None
+
+    return {
+        "id": department[0],
+        "name": department[1],
+        "code": department[2],
+        "description": department[3],
+        "is_active": department[4],
+        "created_at": department[5],
+        "updated_at": department[6]
+    }
+
+
 def create_department(
     name: str,
     code: str,
@@ -37,20 +53,27 @@ def create_department(
                 "Department code already exists"
             )
 
-    return repository_create_department(
+    department = repository_create_department(
         name=name,
         code=code.upper(),
         description=description
     )
+
+    return department_to_dict(department)
 
 
 def get_departments(
     include_inactive=False
 ):
 
-    return repository_get_departments(
+    departments = repository_get_departments(
         include_inactive
     )
+
+    return [
+        department_to_dict(department)
+        for department in departments
+    ]
 
 
 def get_department(
@@ -64,12 +87,11 @@ def get_department(
     )
 
     if not department:
-
         raise ValueError(
             "Department not found"
         )
 
-    return department
+    return department_to_dict(department)
 
 
 def update_department(
@@ -81,7 +103,7 @@ def update_department(
         department_id
     )
 
-    return repository_update_department(
+    updated_department = repository_update_department(
         department_id=department_id,
         name=data.name,
         code=(
@@ -93,6 +115,8 @@ def update_department(
         is_active=data.is_active
     )
 
+    return department_to_dict(updated_department)
+
 
 def deactivate_department(
     department_id: int
@@ -102,7 +126,20 @@ def deactivate_department(
         department_id
     )
 
-    return repository_deactivate_department(
-        department_id
+    deactivated_department = (
+        repository_deactivate_department(
+            department_id
+        )
     )
 
+    if not deactivated_department:
+        raise ValueError(
+            "Department not found"
+        )
+
+    return {
+        "id": deactivated_department[0],
+        "name": deactivated_department[1],
+        "code": deactivated_department[2],
+        "is_active": deactivated_department[3]
+    }
