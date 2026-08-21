@@ -10,6 +10,7 @@ from app.api.v1.endpoints.departments import (
     router as department_router
 )
 
+
 from app.api.v1.endpoints.designations import (
     router as designation_router
 )

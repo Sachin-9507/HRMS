@@ -1,19 +1,12 @@
 from fastapi import Depends,HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
-
 from datetime import datetime, timedelta, timezone
-
-
 from jose import jwt ,JWTError
-  
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+bearer_scheme = HTTPBearer()
 
 from core.config import settings
 
 ALGORITHM = "HS256"
-
-oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="/auth/login"
-)
 
 
 def create_access_token(
@@ -54,8 +47,10 @@ def decode_access_token(token: str) -> dict:
 
   
 def get_current_user(
-    token: str = Depends(oauth2_scheme),
+        credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
 ):
+    token = credentials.credentials
+
     try:
         payload = decode_access_token(token)
 

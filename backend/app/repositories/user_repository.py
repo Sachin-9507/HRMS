@@ -459,3 +459,72 @@ def confirm_two_factor(
         )
 
         return cursor.fetchone()
+
+def get_user_by_email_cursor(
+    cursor,
+    email: str
+):
+
+    query = """
+        SELECT
+            id,
+            email,
+            password_hash,
+            is_active,
+            is_verified,
+            must_change_password
+        FROM users
+        WHERE LOWER(email) = LOWER(%s)
+        LIMIT 1
+    """
+
+    cursor.execute(
+        query,
+        (email,)
+    )
+
+    return cursor.fetchone()
+
+from app.database.db import get_cursor
+
+
+def create_user_cursor(
+    cursor,
+    email,
+    password_hash,
+    first_name,
+    last_name,
+    phone_number,
+    role_id
+):
+    with get_cursor() as cursor:
+
+        query = """
+            INSERT INTO users
+            (
+                email,
+                password_hash,
+                first_name,
+                last_name,
+                phone_number,
+                role_id
+            )
+            VALUES (%s, %s, %s, %s, %s, %s)
+            RETURNING id;
+        """
+
+        cursor.execute(
+            query,
+            (
+                email,
+                password_hash,
+                first_name,
+                last_name,
+                phone_number,
+                role_id
+            )
+        )
+
+        user_id = cursor.fetchone()[0]
+
+        return user_id

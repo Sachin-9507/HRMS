@@ -19,8 +19,7 @@ from app.auth.jwt import (
 
 from app.schemas.employee import (
     EmployeeCreateRequest,
-    EmployeeUpdateRequest
-)
+  )
 
 from app.services.employee_service import (
     create_new_employee
@@ -229,7 +228,7 @@ def create_employee(
     )
 
     return create_employee_account(
-        employee_data=employee_data
+        employee_data
     )
 
 
@@ -263,3 +262,5 @@ def get_my_employee_profile(
             status_code=404,
             detail=str(error)
         )
+
+

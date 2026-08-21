@@ -688,3 +688,109 @@ def count_employees(
         return result[0]
 
 
+def generate_employee_code_cursor(
+    cursor
+):
+
+    cursor.execute(
+        """
+        SELECT nextval(
+            'employee_code_seq'
+        )
+        """
+    )
+
+    number = cursor.fetchone()[0]
+
+    return f"EMP{number:06d}"
+
+def create_employee_cursor(
+    cursor,
+    employee_code,
+    user_id,
+    first_name,
+    last_name,
+    email,
+    phone,
+    date_of_birth,
+    gender,
+    joining_date,
+    department_id,
+    designation_id,
+    manager_id,
+    employment_type
+):
+
+    query = """
+        INSERT INTO employees (
+            employee_code,
+            user_id,
+            first_name,
+            last_name,
+            email,
+            phone,
+            date_of_birth,
+            gender,
+            joining_date,
+            department_id,
+            designation_id,
+            manager_id,
+            employment_type,
+            status
+        )
+        VALUES (
+            %s,
+            %s,
+            %s,
+            %s,
+            %s,
+            %s,
+            %s,
+            %s,
+            %s,
+            %s,
+            %s,
+            %s,
+            %s,
+            'ACTIVE'
+        )
+        RETURNING
+            id,
+            employee_code,
+            user_id,
+            first_name,
+            last_name,
+            email,
+            phone,
+            date_of_birth,
+            gender,
+            joining_date,
+            department_id,
+            designation_id,
+            manager_id,
+            employment_type,
+            status,
+            created_at,
+            updated_at
+    """
+
+    cursor.execute(
+        query,
+        (
+            employee_code,
+            user_id,
+            first_name,
+            last_name,
+            email,
+            phone,
+            date_of_birth,
+            gender,
+            joining_date,
+            department_id,
+            designation_id,
+            manager_id,
+            employment_type
+        )
+    )
+
+    return cursor.fetchone()

@@ -125,3 +125,28 @@ class EmployeeResponse(BaseModel):
     employment_type: str
 
     status: str
+
+
+class EmployeeCreateRequest(BaseModel):
+
+    first_name: str
+
+    last_name: str | None = None
+
+    email: EmailStr
+
+    phone: str | None = None
+
+    date_of_birth: date | None = None
+
+    gender: str | None = None
+
+    joining_date: date
+
+    department_id: int
+
+    designation_id: int
+
+    manager_id: int | None = None
+
+    employment_type: str

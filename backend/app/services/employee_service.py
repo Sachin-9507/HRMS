@@ -33,70 +33,27 @@ from app.repositories.employee_repository import (
     count_employees
 )
 
+from app.database.transaction import transaction
 
-def create_employee_account(
-    employee_data
-):
+from app.repositories.user_repository import (
+    get_user_by_email_cursor,
+    create_user_cursor
+)
 
-    existing_user = get_user_by_email(
-        employee_data.email
-    )
+from app.repositories.role_repository import (
+    get_role_by_name_cursor,
+    assign_role_cursor
+)
 
-    if existing_user:
+from app.repositories.employee_repository import (
+    generate_employee_code_cursor,
+    create_employee_cursor
+)
 
-        raise ValueError(
-            "Email already exists"
-        )
-
-    role = get_employee_role()
-
-    if not role:
-
-        raise ValueError(
-            "Employee role is not configured"
-        )
-
-    temporary_password = (
-        generate_temporary_password()
-    )
-
-    password_hash = hash_password(
-        temporary_password
-    )
-
-    user_id, employee = (
-        repository_create_employee_account(
-            user_email=employee_data.email,
-            password_hash=password_hash,
-            role_id=role[0],
-            employee_code=employee_data.employee_code,
-            first_name=employee_data.first_name,
-            last_name=employee_data.last_name,
-            phone=employee_data.phone,
-            date_of_birth=employee_data.date_of_birth,
-            gender=employee_data.gender,
-            address=employee_data.address,
-            city=employee_data.city,
-            state=employee_data.state,
-            country=employee_data.country,
-            postal_code=employee_data.postal_code,
-            joining_date=employee_data.joining_date,
-            employment_type=employee_data.employment_type,
-            department_id=employee_data.department_id,
-            designation_id=employee_data.designation_id,
-            manager_id=employee_data.manager_id,
-            salary=employee_data.salary,
-            emergency_contact_name=employee_data.emergency_contact_name,
-            emergency_contact_phone=employee_data.emergency_contact_phone
-        )
-    )
-
-    return {
-        "user_id": user_id,
-        "employee": employee,
-        "temporary_password": temporary_password
-    }
-
+from app.auth.password import (
+    hash_password,
+    generate_temporary_password
+)
 
 
 
@@ -329,3 +286,102 @@ def create_new_employee(
         manager_id=data.manager_id,
         employment_type=data.employment_type
     )
+
+
+def create_employee_account(data):
+
+    temporary_password = (
+        generate_temporary_password()
+    )
+
+    password_hash = hash_password(
+        temporary_password
+    )
+
+    with transaction() as cursor:
+
+        # 1. Check email
+
+        existing_user = (
+            get_user_by_email_cursor(
+                cursor,
+                data.email
+            )
+        )
+
+        if existing_user:
+
+            raise ValueError(
+                "A user with this email already exists"
+            )
+
+        # 2. Find EMPLOYEE role
+
+        employee_role = (
+            get_role_by_name_cursor(
+                cursor,
+                "Employee"
+            )
+        )
+
+        if not employee_role:
+
+            raise ValueError(
+                "Employee role does not exist"
+            )
+
+        # 3. Generate employee code
+
+        employee_code = (
+            generate_employee_code_cursor(
+                cursor
+            )
+        )
+
+        # 4. Create user
+   
+    user = create_user_cursor(
+            cursor=cursor, 
+            email=data.email,
+            password_hash=password_hash,
+            first_name=data.first_name,
+            last_name=data.last_name,
+            phone_number=data.phone,
+            role_id=data.role_id
+        )
+
+    user_id = user[0]
+
+        # 5. Assign EMPLOYEE role
+
+    assign_role_cursor(
+            cursor=cursor,
+            user_id=user_id,
+            role_id=employee_role[0]
+        )
+
+        # 6. Create employee
+
+    employee = create_employee_cursor(
+            cursor=cursor,
+            employee_code=employee_code,
+            user_id=user_id,
+            first_name=data.first_name,
+            last_name=data.last_name,
+            email=data.email,
+            phone=data.phone,
+            date_of_birth=data.date_of_birth,
+            gender=data.gender,
+            joining_date=data.joining_date,
+            department_id=data.department_id,
+            designation_id=data.designation_id,
+            manager_id=data.manager_id,
+            employment_type=data.employment_type
+        )
+
+    return {
+            "user": user,
+            "employee": employee,
+            "temporary_password":
+                temporary_password
+        }
