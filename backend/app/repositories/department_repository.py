@@ -179,4 +179,23 @@ def deactivate_department(
 
         return cursor.fetchone()
 
-    
+
+def get_department_by_id_cursor(
+    cursor,
+    department_id: int
+):
+    query = """
+        SELECT
+            id,
+            name
+        FROM departments
+        WHERE id = %s
+        LIMIT 1
+    """
+
+    cursor.execute(
+        query,
+        (department_id,)
+    )
+
+    return cursor.fetchone()

@@ -219,3 +219,23 @@ def deactivate_designation(
         )
 
         return cursor.fetchone()
+
+def get_designation_by_id_cursor(
+    cursor,
+    designation_id: int
+):
+    query = """
+        SELECT
+            id,
+            name
+        FROM designations
+        WHERE id = %s
+        LIMIT 1
+    """
+
+    cursor.execute(
+        query,
+        (designation_id,)
+    )
+
+    return cursor.fetchone()

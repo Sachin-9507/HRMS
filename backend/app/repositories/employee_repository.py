@@ -794,3 +794,28 @@ def create_employee_cursor(
     )
 
     return cursor.fetchone()
+
+def get_active_employee_by_id_cursor(
+    cursor,
+    employee_id: int
+):
+    query = """
+        SELECT
+            id,
+            employee_code,
+            user_id,
+            first_name,
+            last_name,
+            status
+        FROM employees
+        WHERE id = %s
+          AND status = 'ACTIVE'
+        LIMIT 1
+    """
+
+    cursor.execute(
+        query,
+        (employee_id,)
+    )
+
+    return cursor.fetchone()

@@ -21,16 +21,6 @@ from app.schemas.employee import (
     EmployeeCreateRequest,
   )
 
-from app.services.employee_service import (
-    create_new_employee
-)
-
-
-from app.services.employee_service import (
-    list_employees,
-    get_employee,
-    get_current_employee
-)
 
 
 router = APIRouter(
@@ -71,7 +61,7 @@ def list_employee_api(
     )
 ):
 
-    return list_employees(
+    return get_all_employee(
         search=search,
         department_id=department_id,
         designation_id=designation_id,
@@ -246,7 +236,7 @@ def get_my_employee_profile(
         user_id = current_user["user_id"]
 
         employee = (
-            get_current_employee(
+            get_employee_by_id(
                 user_id
             )
         )
