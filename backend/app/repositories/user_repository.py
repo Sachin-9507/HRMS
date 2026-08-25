@@ -497,34 +497,40 @@ def create_user_cursor(
     phone_number,
     role_id
 ):
-    with get_cursor() as cursor:
-
-        query = """
-            INSERT INTO users
-            (
-                email,
-                password_hash,
-                first_name,
-                last_name,
-                phone_number,
-                role_id
-            )
-            VALUES (%s, %s, %s, %s, %s, %s)
-            RETURNING id;
-        """
-
-        cursor.execute(
-            query,
-            (
-                email,
-                password_hash,
-                first_name,
-                last_name,
-                phone_number,
-                role_id
-            )
+    query = """
+        INSERT INTO users
+        (
+            email,
+            password_hash,
+            first_name,
+            last_name,
+            phone_number,
+            role_id
         )
+        VALUES (%s, %s, %s, %s, %s, %s)
+        RETURNING
+            id,
+            email,
+            first_name,
+            last_name,
+            phone_number,
+            role_id,
+            is_active,
+            is_email_verified,
+            is_2fa_enabled,
+            created_at;
+    """
 
-        user_id = cursor.fetchone()[0]
+    cursor.execute(
+        query,
+        (
+            email,
+            password_hash,
+            first_name,
+            last_name,
+            phone_number,
+            role_id
+        )
+    )
 
-        return user_id
+    return cursor.fetchone()

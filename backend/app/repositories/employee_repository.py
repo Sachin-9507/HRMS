@@ -21,8 +21,7 @@ def create_employee(
     designation_id,
     manager_id,
     salary,
-    emergency_contact_name,
-    emergency_contact_phone,
+    
 ):
     query = """
         INSERT INTO employees (
@@ -44,9 +43,8 @@ def create_employee(
             department_id,
             designation_id,
             manager_id,
-            salary,
-            emergency_contact_name,
-            emergency_contact_phone
+            salary
+           
         )
         VALUES (
             %s, %s, %s, %s, %s,
@@ -70,7 +68,7 @@ def create_employee(
             designation_id,
             manager_id,
             employment_type,
-            employment_status,
+            status,
             created_at,
             updated_at;
     """
@@ -94,9 +92,8 @@ def create_employee(
         department_id,
         designation_id,
         manager_id,
-        salary,
-        emergency_contact_name,
-        emergency_contact_phone,
+        salary
+        
     )
 
     with get_cursor() as cursor:
@@ -122,7 +119,7 @@ def get_all_employee():
             des.name AS designation,
             e.manager_id,
             e.salary,
-            e.employment_status,
+            e.status,
             e.created_at
         FROM employees e
 
@@ -165,9 +162,7 @@ def get_employee_by_id(employee_id: int):
             des.name AS designation,
             e.manager_id,
             e.salary,
-            e.employment_status,
-            e.emergency_contact_name,
-            e.emergency_contact_phone,
+            e.status,
             e.created_at,
             e.updated_at
         FROM employees e
@@ -208,9 +203,8 @@ def update_employee(
     manager_id,
     salary,
     employment_type,
-    employment_status,
-    emergency_contact_name,
-    emergency_contact_phone,
+    status,
+    
 ):
     query = """
         UPDATE employees
@@ -230,9 +224,8 @@ def update_employee(
             manager_id = %s,
             salary = %s,
             employment_type = %s,
-            employment_status = %s,
-            emergency_contact_name = %s,
-            emergency_contact_phone = %s,
+            status = %s,
+           
             updated_at = CURRENT_TIMESTAMP
         WHERE id = %s
 
@@ -242,7 +235,7 @@ def update_employee(
             first_name,
             last_name,
             email,
-            employment_status,
+            status,
             updated_at;
     """
 
@@ -262,9 +255,7 @@ def update_employee(
         manager_id,
         salary,
         employment_type,
-        employment_status,
-        emergency_contact_name,
-        emergency_contact_phone,
+        status,
         employee_id,
     )
 
@@ -277,14 +268,14 @@ def deactivate_employee(employee_id: int):
     query = """
         UPDATE employees
         SET
-            employment_status = 'INACTIVE',
+            status = 'INACTIVE',
             updated_at = CURRENT_TIMESTAMP
         WHERE id = %s
 
         RETURNING
             id,
             employee_code,
-            employment_status;
+            status;
     """
 
     with get_cursor() as cursor:
@@ -317,8 +308,7 @@ def create_employee_account(
     designation_id,
     manager_id,
     salary,
-    emergency_contact_name,
-    emergency_contact_phone
+   
 ):
     user_query = """
         INSERT INTO users (email, password_hash, first_name, last_name, phone_number, role_id)
@@ -346,9 +336,8 @@ def create_employee_account(
             department_id,
             designation_id,
             manager_id,
-            salary,
-            emergency_contact_name,
-            emergency_contact_phone
+            salary
+           
         )
         VALUES (
             %s, %s, %s, %s, %s,
@@ -364,7 +353,7 @@ def create_employee_account(
             first_name,
             last_name,
             email,
-            employment_status,
+            status,
             created_at;
     """
 
@@ -406,9 +395,8 @@ def create_employee_account(
                 department_id,
                 designation_id,
                 manager_id,
-                salary,
-                emergency_contact_name,
-                emergency_contact_phone,
+                salary
+               
             )
         )
 
@@ -518,7 +506,7 @@ def get_employees(
 
             e.joining_date,
             e.employment_type,
-            e.employment_status
+            e.status
 
         FROM employees e
 
@@ -579,7 +567,7 @@ def get_employees(
     if status:
 
         query += """
-            AND e.employment_status = %s
+            AND e.status = %s
         """
 
         params.append(
@@ -669,7 +657,7 @@ def count_employees(
     if status:
 
         query += """
-            AND e.employment_status = %s
+            AND e.status = %s
         """
 
         params.append(

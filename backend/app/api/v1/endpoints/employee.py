@@ -118,9 +118,7 @@ def get_employee_api(
         "designation": employee[19],
         "manager_id": employee[20],
         "salary": employee[21],
-        "employment_status": employee[22],
-        "emergency_contact_name": employee[23],
-        "emergency_contact_phone": employee[24],
+        "status": employee[22],
         "created_at": employee[25],
         "updated_at": employee[26]
     }
@@ -156,7 +154,7 @@ def deactivate_employee(
         "employee": {
             "id": employee[0],
             "employee_code": employee[1],
-            "employment_status": employee[2]
+            "status": employee[2]
         }
     }
 
@@ -189,9 +187,8 @@ def create_employee(
     department_id: int | None = None,
     designation_id: int | None = None,
     manager_id: int | None = None,
-    salary: float | None = None,
-    emergency_contact_name: str | None = None,
-    emergency_contact_phone: str | None = None,
+    salary: float | None = None
+   
 ):
 
     employee_data = EmployeeCreateRequest(
@@ -212,9 +209,8 @@ def create_employee(
         department_id=department_id,
         designation_id=designation_id,
         manager_id=manager_id,
-        salary=salary,
-        emergency_contact_name=emergency_contact_name,
-        emergency_contact_phone=emergency_contact_phone,
+        salary=salary
+       
     )
 
     return create_employee_account(

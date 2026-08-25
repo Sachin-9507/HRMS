@@ -6,8 +6,7 @@ from app.repositories.user_repository import (
 )
 
 from app.repositories.role_repository import (
-    get_role_by_name_cursor,
-    assign_role_cursor
+    get_role_by_name_cursor
 )
 
 from app.repositories.employee_repository import (
@@ -177,14 +176,14 @@ def create_employee_account(data):
         employee_role = (
             get_role_by_name_cursor(
                 cursor,
-                "EMPLOYEE"
+                "Employee"
             )
         )
 
         if not employee_role:
 
             raise ValueError(
-                "EMPLOYEE role does not exist"
+                "Employee role does not exist"
             )
 
         # Generate employee code
@@ -195,22 +194,20 @@ def create_employee_account(data):
         )
 
         # Create user
-        user = create_user_cursor(
+        user_result = create_user_cursor(
             cursor=cursor,
             email=data.email,
-            password_hash=password_hash
-        )
-
-        user_id = user[0]
-
-        # Assign role
-        assign_role_cursor(
-            cursor=cursor,
-            user_id=user_id,
+            password_hash=password_hash,
+            first_name=data.first_name,
+            last_name=data.last_name,
+            phone_number=data.phone,
             role_id=employee_role[0]
+
         )
 
-        # Create employee
+        user_id = user_result[0]
+
+      # Create employee
         employee = create_employee_cursor(
             cursor=cursor,
             employee_code=employee_code,
@@ -229,15 +226,10 @@ def create_employee_account(data):
         )
 
         return {
-            "user": user,
+            "user_id": user_id,
             "employee": employee,
             "temporary_password":
                 temporary_password
         }
 
-    return {
-    "message": "Employee created successfully",
-    "employee": result["employee"],
-    "temporary_password":
-        result["temporary_password"]
-}
+  
