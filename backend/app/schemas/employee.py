@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date , datetime
 from typing import Optional
 
 from pydantic import BaseModel, EmailStr, Field
@@ -126,6 +126,10 @@ class EmployeeResponse(BaseModel):
 
     status: str
 
+    is_active: bool
+
+    created_at: datetime
+
 
 class EmployeeCreateRequest(BaseModel):
 
@@ -150,3 +154,43 @@ class EmployeeCreateRequest(BaseModel):
     manager_id: int | None = None
 
     employment_type: str
+
+class EmployeeListResponse(BaseModel):
+
+    items: list[EmployeeResponse]
+
+    page: int
+
+    page_size: int
+
+    total: int
+
+    total_pages: int
+
+class EmployeeUpdateRequest(BaseModel):
+
+    first_name: str
+
+    last_name: str | None = None
+
+    email: EmailStr
+
+    phone: str | None = None
+
+    date_of_birth: date | None = None
+
+    gender: str | None = None
+
+    joining_date: date
+
+    department_id: int
+
+    designation_id: int
+
+    manager_id: int | None = None
+
+    employment_type: str
+
+class EmployeeStatusUpdateRequest(BaseModel):
+
+    status: str

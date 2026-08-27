@@ -534,3 +534,180 @@ def create_user_cursor(
     )
 
     return cursor.fetchone()
+
+def get_user_by_email_except_user_cursor(
+    cursor,
+    email: str,
+    user_id: int
+):
+
+    query = """
+        SELECT
+            id,
+            email
+        FROM users
+        WHERE LOWER(email) = LOWER(%s)
+          AND id <> %s
+        LIMIT 1
+    """
+
+    cursor.execute(
+        query,
+        (email, user_id)
+    )
+
+    return cursor.fetchone()
+
+
+def update_user_email_cursor(
+    cursor,
+    user_id: int,
+    email: str
+):
+
+    query = """
+        UPDATE users
+        SET
+            email = %s,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = %s
+        RETURNING id, email
+    """
+
+    cursor.execute(
+        query,
+        (email, user_id)
+    )
+
+    return cursor.fetchone()
+
+def update_employee_cursor(
+    cursor,
+    employee_id: int,
+    first_name: str,
+    last_name: str | None,
+    email: str,
+    phone: str | None,
+    date_of_birth,
+    gender: str | None,
+    joining_date,
+    department_id: int,
+    designation_id: int,
+    manager_id: int | None,
+    employment_type: str
+):
+
+    query = """
+        UPDATE employees
+        SET
+            first_name = %s,
+            last_name = %s,
+            email = %s,
+            phone = %s,
+            date_of_birth = %s,
+            gender = %s,
+            joining_date = %s,
+            department_id = %s,
+            designation_id = %s,
+            manager_id = %s,
+            employment_type = %s,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = %s
+
+        RETURNING
+            id,
+            employee_code,
+            user_id,
+            first_name,
+            last_name,
+            email,
+            phone,
+            date_of_birth,
+            gender,
+            joining_date,
+            department_id,
+            designation_id,
+            manager_id,
+            employment_type,
+            status,
+            updated_at
+    """
+
+    cursor.execute(
+        query,
+        (
+            first_name,
+            last_name,
+            email,
+            phone,
+            date_of_birth,
+            gender,
+            joining_date,
+            department_id,
+            designation_id,
+            manager_id,
+            employment_type,
+            employee_id
+        )
+    )
+
+    return cursor.fetchone()
+
+def update_employee_status_cursor(
+    cursor,
+    employee_id: int,
+    status: str
+):
+
+    query = """
+        UPDATE employees
+        SET
+            status = %s,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = %s
+
+        RETURNING
+            id,
+            user_id,
+            status,
+            updated_at
+    """
+
+    cursor.execute(
+        query,
+        (
+            status,
+            employee_id
+        )
+    )
+
+    return cursor.fetchone()
+
+
+def update_user_active_status_cursor(
+    cursor,
+    user_id: int,
+    is_active: bool
+):
+
+    query = """
+        UPDATE users
+        SET
+            is_active = %s,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = %s
+
+        RETURNING
+            id,
+            is_active
+    """
+
+    cursor.execute(
+        query,
+        (
+            is_active,
+            user_id
+        )
+    )
+
+    return cursor.fetchone()

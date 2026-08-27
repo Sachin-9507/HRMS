@@ -101,7 +101,15 @@ def create_employee(
         return cursor.fetchone()
 
 
-def get_all_employee():
+def get_all_employee(
+        search=None,
+        department_id=None,
+        designation_id=None,
+        manager_id=None,
+        status=None,
+        page=1,
+        page_size=10
+):
     query = """
         SELECT
             e.id,
@@ -151,7 +159,6 @@ def get_employee_by_id(employee_id: int):
             e.gender,
             e.address,
             e.city,
-            e.state,
             e.country,
             e.postal_code,
             e.joining_date,
@@ -285,6 +292,27 @@ def deactivate_employee(employee_id: int):
         )
         return cursor.fetchone()
 
+def activate_employee(employee_id: int):
+    query = """
+        UPDATE employees
+        SET
+            status = 'ACTIVE',
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = %s
+
+        RETURNING
+            id,
+            employee_code,
+            status;
+    """
+
+    with get_cursor() as cursor:
+        cursor.execute(
+            query,
+            (employee_id,)
+        )
+
+        return cursor.fetchone()
 
 
 def create_employee_account(
@@ -481,47 +509,29 @@ def get_employees(
     ) * page_size
 
     query = """
-        SELECT
-            e.id,
-            e.employee_code,
-            e.user_id,
-            e.first_name,
-            e.last_name,
-            e.email,
-            e.phone,
-
-            e.department_id,
-            d.name AS department_name,
-
-            e.designation_id,
-            ds.name AS designation_name,
-
-            e.manager_id,
-
-            CONCAT(
-                m.first_name,
-                ' ',
-                COALESCE(m.last_name, '')
-            ) AS manager_name,
-
-            e.joining_date,
-            e.employment_type,
-            e.status
-
-        FROM employees e
-
-        LEFT JOIN departments d
-            ON d.id = e.department_id
-
-        LEFT JOIN designations ds
-            ON ds.id = e.designation_id
-
-        LEFT JOIN employees m
-            ON m.id = e.manager_id
-
-        WHERE 1 = 1
-    """
-
+    SELECT
+        e.id,
+        e.employee_code,
+        e.user_id,
+        u.first_name,
+        u.last_name,
+        u.email,
+        u.phone_number,
+        e.date_of_joining,
+        e.employment_type,
+        e.department_id,
+        d.name AS department_name,
+        e.designation_id,
+        des.name AS designation_name,
+        e.salary,
+        e.status,
+        e.created_at
+    FROM employees e
+    JOIN users u ON u.id = e.user_id
+    LEFT JOIN departments d ON d.id = e.department_id
+    LEFT JOIN designations des ON des.id = e.designation_id
+    WHERE 1=1
+"""
     params = []
 
     if search:
@@ -807,3 +817,305 @@ def get_active_employee_by_id_cursor(
     )
 
     return cursor.fetchone()
+
+
+def get_employee_cursor(
+    cursor,
+    search: str | None = None,
+    department_id: int | None = None,
+    designation_id: int | None = None,
+    status: str | None = None,
+    page: int = 1,
+    page_size: int = 10
+):
+
+    conditions = []
+    params = []
+
+    if search:
+
+        conditions.append("""
+            (
+                LOWER(e.first_name)
+                    LIKE LOWER(%s)
+
+                OR LOWER(e.last_name)
+                    LIKE LOWER(%s)
+
+                OR LOWER(e.email)
+                    LIKE LOWER(%s)
+
+                OR LOWER(e.employee_code)
+                    LIKE LOWER(%s)
+            )
+        """)
+
+        search_value = f"%{search}%"
+
+        params.extend([
+            search_value,
+            search_value,
+            search_value,
+            search_value
+        ])
+
+    if department_id is not None:
+
+        conditions.append(
+            "e.department_id = %s"
+        )
+
+        params.append(
+            department_id
+        )
+
+    if designation_id is not None:
+
+        conditions.append(
+            "e.designation_id = %s"
+        )
+
+        params.append(
+            designation_id
+        )
+
+    if status:
+
+        conditions.append(
+            "e.status = %s"
+        )
+
+        params.append(
+            status.upper()
+        )
+
+    where_clause = ""
+
+    if conditions:
+
+        where_clause = (
+            "WHERE "
+            + " AND ".join(conditions)
+        )
+
+    count_query = f"""
+        SELECT COUNT(*)
+        FROM employees e
+        JOIN users u
+            ON u.id = e.user_id
+
+        {where_clause}
+    """
+
+    cursor.execute(
+        count_query,
+        tuple(params)
+    )
+
+    total = cursor.fetchone()[0]
+
+    offset = (
+        (page - 1) * page_size
+    )
+
+    query = f"""
+        SELECT
+            e.id,
+            e.employee_code,
+            e.user_id,
+
+            e.first_name,
+            e.last_name,
+
+            e.email,
+            e.phone,
+
+            e.date_of_birth,
+            e.gender,
+            e.joining_date,
+
+            e.department_id,
+            d.name AS department_name,
+
+            e.designation_id,
+            des.name AS designation_name,
+
+            e.manager_id,
+
+            CONCAT(
+                manager.first_name,
+                ' ',
+                COALESCE(
+                    manager.last_name,
+                    ''
+                )
+            ) AS manager_name,
+
+            e.employment_type,
+            e.status,
+
+            u.is_active,
+
+            e.created_at
+
+        FROM employees e
+
+        JOIN users u
+            ON u.id = e.user_id
+
+        LEFT JOIN departments d
+            ON d.id = e.department_id
+
+        LEFT JOIN designations des
+            ON des.id = e.designation_id
+
+        LEFT JOIN employees manager
+            ON manager.id = e.manager_id
+
+        {where_clause}
+
+        ORDER BY e.id DESC
+
+        LIMIT %s
+        OFFSET %s
+    """
+
+    query_params = params + [
+        page_size,
+        offset
+    ]
+
+    cursor.execute(
+        query,
+        tuple(query_params)
+    )
+
+    rows = cursor.fetchall()
+
+    return rows, total
+
+
+def get_employee_by_id_cursor(
+    cursor,
+    employee_id: int
+):
+
+    query = """
+        SELECT
+            e.id,
+            e.employee_code,
+            e.user_id,
+
+            e.first_name,
+            e.last_name,
+
+            e.email,
+            e.phone,
+
+            e.date_of_birth,
+            e.gender,
+            e.joining_date,
+
+            e.department_id,
+            d.name AS department_name,
+
+            e.designation_id,
+            des.name AS designation_name,
+
+            e.manager_id,
+
+            CONCAT(
+                manager.first_name,
+                ' ',
+                COALESCE(
+                    manager.last_name,
+                    ''
+                )
+            ) AS manager_name,
+
+            e.employment_type,
+            e.status,
+
+            u.is_active,
+            u.is_verified,
+            u.must_change_password,
+
+            e.created_at,
+            e.updated_at
+
+        FROM employees e
+
+        JOIN users u
+            ON u.id = e.user_id
+
+        LEFT JOIN departments d
+            ON d.id = e.department_id
+
+        LEFT JOIN designations des
+            ON des.id = e.designation_id
+
+        LEFT JOIN employees manager
+            ON manager.id = e.manager_id
+
+        WHERE e.id = %s
+
+        LIMIT 1
+    """
+
+    cursor.execute(
+        query,
+        (employee_id,)
+    )
+
+    return cursor.fetchone()
+
+def get_employee_for_update_cursor(
+    cursor,
+    employee_id: int
+):
+
+    query = """
+        SELECT
+            e.id,
+            e.user_id,
+            e.email,
+            e.status
+        FROM employees e
+        WHERE e.id = %s
+        LIMIT 1
+    """
+
+    cursor.execute(
+        query,
+        (employee_id,)
+    )
+
+    return cursor.fetchone()
+
+def update_employee_status(
+    employee_id: int,
+    status: str
+):
+    query = """
+        UPDATE employees
+        SET
+            status = %s,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = %s
+        RETURNING
+            id,
+            employee_code,
+            status,
+            updated_at;
+    """
+
+    with get_cursor() as cursor:
+        cursor.execute(
+            query,
+            (
+                status.upper(),
+                employee_id
+            )
+        )
+
+        return cursor.fetchone()
