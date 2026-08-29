@@ -1,9 +1,15 @@
+from fastapi import HTTPException
+
+from app.database.transaction import transaction
+
 from app.repositories.department_repository import (
     create_department as repository_create_department,
     get_departments as repository_get_departments,
     get_department_by_id as repository_get_department_by_id,
     update_department as repository_update_department,
-    deactivate_department as repository_deactivate_department
+    deactivate_department as repository_deactivate_department,
+    list_departments_cursor,
+    update_department_status_cursor,
 )
 
 
@@ -29,17 +35,16 @@ def create_department(
     description: str | None = None
 ):
 
-    existing_departments = (
-        repository_get_departments(
-            include_inactive=False
-        )
+    existing_departments = repository_get_departments(
+        include_inactive=True
     )
 
     for department in existing_departments:
 
         if (
             department[1]
-            and department[1].lower() == name.lower()
+            and department[1].strip().lower()
+            == name.strip().lower()
         ):
             raise ValueError(
                 "Department name already exists"
@@ -47,7 +52,8 @@ def create_department(
 
         if (
             department[2]
-            and department[2].lower() == code.lower()
+            and department[2].strip().lower()
+            == code.strip().lower()
         ):
             raise ValueError(
                 "Department code already exists"
@@ -103,6 +109,36 @@ def update_department(
         department_id
     )
 
+    existing_departments = repository_get_departments(
+        include_inactive=True
+    )
+
+    for existing in existing_departments:
+
+        # Skip the department currently being updated
+        if existing[0] == department_id:
+            continue
+
+        if (
+            data.name
+            and existing[1]
+            and existing[1].strip().lower()
+            == data.name.strip().lower()
+        ):
+            raise ValueError(
+                "Department name already exists"
+            )
+
+        if (
+            data.code
+            and existing[2]
+            and existing[2].strip().lower()
+            == data.code.strip().lower()
+        ):
+            raise ValueError(
+                "Department code already exists"
+            )
+
     updated_department = repository_update_department(
         department_id=department_id,
         name=data.name,
@@ -117,29 +153,60 @@ def update_department(
 
     return department_to_dict(updated_department)
 
-
-def deactivate_department(
-    department_id: int
+def update_department_status(
+    department_id: int,
+    is_active: bool
 ):
 
-    department = get_department(
-        department_id
-    )
+    with transaction() as cursor:
 
-    deactivated_department = (
-        repository_deactivate_department(
-            department_id
+        department = (
+            repository_get_department_by_id(
+                department_id
+            )
         )
-    )
 
-    if not deactivated_department:
-        raise ValueError(
-            "Department not found"
+        if not department:
+
+            raise ValueError(
+                "Department not found"
+            )
+
+        row = (
+            update_department_status_cursor(
+                cursor,
+                department_id,
+                is_active
+            )
         )
 
     return {
-        "id": deactivated_department[0],
-        "name": deactivated_department[1],
-        "code": deactivated_department[2],
-        "is_active": deactivated_department[3]
+        "id": row[0],
+        "name": row[1],
+        "is_active": row[2],
+        "updated_at": row[3]
     }
+
+
+def list_departments(
+    include_inactive: bool = False
+):
+
+    with transaction() as cursor:
+
+        rows = list_departments_cursor(
+            cursor,
+            include_inactive
+        )
+
+    return [
+        {
+            "id": row[0],
+            "name": row[1],
+            "description": row[2],
+            "is_active": row[3],
+            "created_at": row[4],
+            "updated_at": row[5]
+        }
+        for row in rows
+    ]

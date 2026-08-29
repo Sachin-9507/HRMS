@@ -70,20 +70,26 @@ def validate_department(
     department_id: int
 ):
 
-    department = (
-        get_department_by_id_cursor(
-            cursor,
-            department_id
-        )
+    query = """
+        SELECT id
+        FROM departments
+        WHERE id = %s
+          AND is_active = TRUE
+        LIMIT 1
+    """
+
+    cursor.execute(
+        query,
+        (department_id,)
     )
 
-    if not department:
+    row = cursor.fetchone()
+
+    if not row:
 
         raise ValueError(
-            "Department not found"
+            "Department not found or inactive"
         )
-
-    return department
 
 
 def validate_designation(
@@ -91,20 +97,26 @@ def validate_designation(
     designation_id: int
 ):
 
-    designation = (
-        get_designation_by_id_cursor(
-            cursor,
-            designation_id
-        )
+    query = """
+        SELECT id
+        FROM designations
+        WHERE id = %s
+          AND is_active = TRUE
+        LIMIT 1
+    """
+
+    cursor.execute(
+        query,
+        (designation_id,)
     )
 
-    if not designation:
+    row = cursor.fetchone()
+
+    if not row:
 
         raise ValueError(
-            "Designation not found"
+            "Designation not found or inactive"
         )
-
-    return designation
 
 
 def validate_manager(

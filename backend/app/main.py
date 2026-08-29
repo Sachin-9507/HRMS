@@ -5,6 +5,9 @@ from app.api.v1.endpoints import auth
 from app.api.v1.endpoints import admin
 from app.api.v1.endpoints.roles import router as roles_router
 from app.api.v1.endpoints.employee import  router as employee_router
+from app.api.v1.endpoints.permissions import (
+    router as permission_router
+)
 
 from app.api.v1.endpoints.departments import (
     router as department_router
@@ -46,6 +49,11 @@ app.include_router(
 
 app.include_router(
     employee_router,
+    prefix="/api/v1"
+)
+
+app.include_router(
+    permission_router,
     prefix="/api/v1"
 )
 

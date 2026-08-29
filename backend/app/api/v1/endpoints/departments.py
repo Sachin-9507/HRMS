@@ -5,15 +5,20 @@ from fastapi import (
 )
 
 from app.schemas.department import (
-    DepartmentCreateRequest,
-    DepartmentUpdateRequest
+    DepartmentUpdateRequest,
+    DepartmentStatusUpdateRequest,
+    DepartmentResponse
 )
 
-from app.services import department_service
-
-from app.auth.rbac import (
-    require_permission
+from app.services.department_service import (
+    create_department as create_department_service,
+    list_departments as list_departments_service,
+    get_department as get_department_service,
+    update_department as update_department_service,
+    update_department_status as update_department_status_service
 )
+
+from app.auth.rbac import require_permission
 
 
 router = APIRouter(
@@ -21,6 +26,10 @@ router = APIRouter(
     tags=["Departments"]
 )
 
+
+# =========================
+# CREATE DEPARTMENT
+# =========================
 
 @router.post(
     "",
@@ -36,7 +45,7 @@ def create_department(
     description: str | None = None
 ):
     try:
-        department = department_service.create_department(
+        department = create_department_service(
             name=name,
             code=code,
             description=description
@@ -54,6 +63,10 @@ def create_department(
         )
 
 
+# =========================
+# LIST DEPARTMENTS
+# =========================
+
 @router.get(
     "",
     dependencies=[
@@ -65,7 +78,7 @@ def create_department(
 def list_departments(
     include_inactive: bool = False
 ):
-    departments = department_service.get_departments(
+    departments = list_departments_service(
         include_inactive
     )
 
@@ -74,8 +87,13 @@ def list_departments(
     }
 
 
+# =========================
+# GET DEPARTMENT BY ID
+# =========================
+
 @router.get(
     "/{department_id}",
+    response_model=DepartmentResponse,
     dependencies=[
         Depends(
             require_permission("department.read")
@@ -86,13 +104,9 @@ def get_department_by_id(
     department_id: int
 ):
     try:
-        department = department_service.get_department(
+        return get_department_service(
             department_id
         )
-
-        return {
-            "department": department
-        }
 
     except ValueError as error:
         raise HTTPException(
@@ -100,6 +114,10 @@ def get_department_by_id(
             detail=str(error)
         )
 
+
+# =========================
+# UPDATE DEPARTMENT
+# =========================
 
 @router.put(
     "/{department_id}",
@@ -111,10 +129,22 @@ def get_department_by_id(
 )
 def update_department_by_id(
     department_id: int,
-    data: DepartmentUpdateRequest
+    name: str,
+    code: str,
+    description: str | None = None,
+    is_active: bool = True
 ):
     try:
-        department = department_service.update_department(
+
+        # Create the schema object manually
+        data = DepartmentUpdateRequest(
+            name=name,
+            code=code,
+            description=description,
+            is_active=is_active
+        )
+
+        department = update_department_service(
             department_id,
             data
         )
@@ -126,13 +156,18 @@ def update_department_by_id(
 
     except ValueError as error:
         raise HTTPException(
-            status_code=404,
+            status_code=400,
             detail=str(error)
         )
 
 
+# =========================
+# DELETE / DEACTIVATE
+# =========================
+
 @router.delete(
     "/{department_id}",
+    include_in_schema=False,
     dependencies=[
         Depends(
             require_permission("department.delete")
@@ -143,8 +178,12 @@ def delete_department(
     department_id: int
 ):
     try:
-        department = department_service.deactivate_department(
-            department_id
+
+        department = update_department_status_service(
+            department_id,
+            DepartmentStatusUpdateRequest(
+                is_active=False
+            )
         )
 
         return {
@@ -155,5 +194,34 @@ def delete_department(
     except ValueError as error:
         raise HTTPException(
             status_code=404,
+            detail=str(error)
+        )
+
+
+# =========================
+# CHANGE STATUS
+# =========================
+
+@router.patch(
+    "/{department_id}/status",
+    dependencies=[
+        Depends(
+            require_permission("department.update")
+        )
+    ]
+)
+def change_department_status(
+    department_id: int,
+    is_active: bool
+):
+    try:
+        return update_department_status_service(
+            department_id,
+            is_active
+        )
+
+    except ValueError as error:
+        raise HTTPException(
+            status_code=400,
             detail=str(error)
         )

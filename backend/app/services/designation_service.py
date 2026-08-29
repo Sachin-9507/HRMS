@@ -1,11 +1,17 @@
 from fastapi import HTTPException
 
+
+from app.database.transaction import transaction  
+
 from app.repositories.designation_repository import (
     create_designation as repository_create_designation,
     get_designations as repository_get_designations,
     get_designation_by_id as repository_get_designation_by_id,
     update_designation as repository_update_designation,
-    deactivate_designation as repository_deactivate_designation
+    deactivate_designation as repository_deactivate_designation,
+    get_designation_by_name_cursor,
+    list_designations_cursor,
+    update_designation_status_cursor
 )
 
 from app.repositories.department_repository import (
@@ -145,3 +151,62 @@ def deactivate_designation(designation_id: int):
     return repository_deactivate_designation(
         designation_id
     )
+
+def list_designations(
+    include_inactive: bool = False
+):
+
+    with transaction() as cursor:
+
+        rows = list_designations_cursor(
+            cursor,
+            include_inactive
+        )
+
+    return [
+        {
+            "id": row[0],
+            "name": row[1],
+            "description": row[2],
+            "is_active": row[3],
+            "created_at": row[4],
+            "updated_at": row[5]
+        }
+        for row in rows
+    ]
+
+def update_designation_status(
+    designation_id: int,
+    is_active: bool
+):
+
+    with transaction() as cursor:
+
+        designation = (
+            repository_get_designation_by_id(
+                cursor,
+                designation_id
+            )
+        )
+
+        if not designation:
+
+            raise ValueError(
+                "Designation not found"
+            )
+
+        row = (
+            update_designation_status_cursor(
+                cursor,
+                designation_id,
+                is_active
+            )
+        )
+
+    return {
+        "id": row[0],
+        "name": row[1],
+        "is_active": row[2],
+        "updated_at": row[3]
+    }
+

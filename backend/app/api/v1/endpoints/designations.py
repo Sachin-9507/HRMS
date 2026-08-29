@@ -1,12 +1,15 @@
 from fastapi import (
     APIRouter,
     Depends,
-    HTTPException
+    HTTPException,
+    Query
 )
 
 from app.schemas.designation import (
     DesignationCreateRequest,
-    DesignationUpdateRequest
+    DesignationUpdateRequest,
+    DesignationStatusUpdateRequest,
+    DesignationResponse
 )
 
 from app.repositories.designation_repository import (
@@ -18,7 +21,9 @@ from app.services.designation_service import (
     get_designations as get_designations_service,
     get_designation as get_designation_service,
     update_designation as update_designation_service,
-    deactivate_designation
+    deactivate_designation,
+    list_designations,
+    update_designation_status
 )
 
 from app.auth.rbac import (
@@ -145,6 +150,7 @@ def update_designation(
 
 @router.delete(
     "/{designation_id}",
+    include_in_schema=False,
     dependencies=[
         Depends(
             require_permission(
@@ -172,5 +178,34 @@ def delete_designation(
 
         raise HTTPException(
             status_code=404,
+            detail=str(error)
+        )
+
+@router.patch(
+    "/{designation_id}/status",
+    dependencies=[
+        Depends(
+            require_permission(
+                "designation.update"
+            )
+        )
+    ]
+)
+def change_designation_status(
+    designation_id: int,
+    data: DesignationStatusUpdateRequest
+):
+
+    try:
+
+        return update_designation_status(
+            designation_id,
+            data.is_active
+        )
+
+    except ValueError as error:
+
+        raise HTTPException(
+            status_code=400,
             detail=str(error)
         )

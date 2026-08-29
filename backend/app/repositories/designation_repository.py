@@ -239,3 +239,94 @@ def get_designation_by_id_cursor(
     )
 
     return cursor.fetchone()
+
+def get_designation_by_name_cursor(
+    cursor,
+    name: str
+):
+
+    query = """
+        SELECT
+            id,
+            name
+        FROM designations
+        WHERE LOWER(name) = LOWER(%s)
+        LIMIT 1
+    """
+
+    cursor.execute(
+        query,
+        (name,)
+    )
+
+    return cursor.fetchone()
+
+def list_designations_cursor(
+    cursor,
+    include_inactive: bool = False
+):
+
+    if include_inactive:
+
+        query = """
+            SELECT
+                id,
+                name,
+                description,
+                is_active,
+                created_at,
+                updated_at
+            FROM designations
+            ORDER BY name ASC
+        """
+
+    else:
+
+        query = """
+            SELECT
+                id,
+                name,
+                description,
+                is_active,
+                created_at,
+                updated_at
+            FROM designations
+            WHERE is_active = TRUE
+            ORDER BY name ASC
+        """
+
+    cursor.execute(query)
+
+    return cursor.fetchall()
+
+def update_designation_status_cursor(
+    cursor,
+    designation_id: int,
+    is_active: bool
+):
+
+    query = """
+        UPDATE designations
+
+        SET
+            is_active = %s,
+            updated_at = CURRENT_TIMESTAMP
+
+        WHERE id = %s
+
+        RETURNING
+            id,
+            name,
+            is_active,
+            updated_at
+    """
+
+    cursor.execute(
+        query,
+        (
+            is_active,
+            designation_id
+        )
+    )
+
+    return cursor.fetchone()

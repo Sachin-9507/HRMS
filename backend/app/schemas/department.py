@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel, Field
@@ -35,3 +36,22 @@ class DepartmentUpdateRequest(BaseModel):
     description: Optional[str] = None
 
     is_active: Optional[bool] = None
+
+class DepartmentStatusUpdateRequest(BaseModel):
+
+    is_active: bool
+
+
+class DepartmentResponse(BaseModel):
+
+    id: int
+
+    name: str
+
+    description: str | None
+
+    is_active: bool
+
+    created_at: datetime
+
+    updated_at: datetime
