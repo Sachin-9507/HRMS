@@ -12,12 +12,29 @@ def get_current_user(
 ):
     token = credentials.credentials
 
-    payload = decode_access_token(token)
+    try:
+        payload = decode_access_token(token)
 
-    if not payload:
+        user_id = payload.get("sub")
+
+        print("JWT PAYLOAD:", payload)
+        print("USER ID:", user_id)
+
+        if user_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid access token"
+            )
+
+        return {
+            "id": int(user_id)
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired access token"
         )
-
-    return payload

@@ -1,8 +1,5 @@
-from fastapi import Depends,HTTPException, status
 from datetime import datetime, timedelta, timezone
 from jose import jwt ,JWTError
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-bearer_scheme = HTTPBearer()
 
 from core.config import settings
 
@@ -15,6 +12,10 @@ def create_access_token(
 ) -> str:
 
     payload = data.copy()
+
+    # Make sure JWT contains "sub"
+    if "user_id" in payload and "sub" not in payload:
+        payload["sub"] = str(payload["user_id"])
 
     payload["exp"] = (
         datetime.now(timezone.utc)
@@ -46,29 +47,7 @@ def decode_access_token(token: str) -> dict:
         raise JWTError("Invalid access token")
 
   
-def get_current_user(
-        credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
-):
-    token = credentials.credentials
 
-    try:
-        payload = decode_access_token(token)
-
-        user_id = payload.get("sub")
-
-        if user_id is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid access token",
-            )
-
-        return user_id
-
-    except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired access token",
-        )
 
 def create_refresh_token(
     data: dict,

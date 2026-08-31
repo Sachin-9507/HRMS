@@ -435,63 +435,43 @@ def create_employee_account(
     from app.database.db import get_cursor
 
 
-def get_employee_by_user_id(
-    user_id: int
-):
+def get_employee_by_user_id(user_id: int):
 
     query = """
         SELECT
             e.id,
-            e.employee_code,
             e.user_id,
+            e.employee_code,
             e.first_name,
             e.last_name,
             e.email,
             e.phone,
             e.date_of_birth,
             e.gender,
+            e.address,
+            e.city,
+            e.country,
+            e.postal_code,
             e.joining_date,
-
-            e.department_id,
-            d.name AS department_name,
-
-            e.designation_id,
-            ds.name AS designation_name,
-
-            e.manager_id,
-
-            CONCAT(
-                m.first_name,
-                ' ',
-                COALESCE(m.last_name, '')
-            ) AS manager_name,
-
             e.employment_type,
-            e.status
-
-        FROM employees e
-
-        LEFT JOIN departments d
-            ON d.id = e.department_id
-
-        LEFT JOIN designations ds
-            ON ds.id = e.designation_id
-
-        LEFT JOIN employees m
-            ON m.id = e.manager_id
-
-        WHERE e.user_id = %s;
+            e.department_id,
+            e.designation_id,
+            e.manager_id,
+            e.salary,
+            e.status,
+            e.created_at,
+            e.updated_at
+            FROM employees e
+        WHERE e.user_id = %s
+        LIMIT 1;
     """
 
     with get_cursor() as cursor:
-
         cursor.execute(
             query,
             (user_id,)
         )
-
         return cursor.fetchone()
-
 
 
 
@@ -1119,3 +1099,4 @@ def update_employee_status(
         )
 
         return cursor.fetchone()
+

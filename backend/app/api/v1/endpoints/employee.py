@@ -3,19 +3,21 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.auth.rbac import require_permission
-from app.auth.jwt import get_current_user
+from app.auth.dependencies import get_current_user
 
 from app.repositories.employee_repository import (
     get_employee_by_id,
+    get_employee_by_user_id,
     update_employee_status
 )
 
 from app.services.employee_service import (
     create_employee_account,
     list_employees,
-    update_employee as update_employee,
     update_employee
 )
+
+from app.services.me_service import get_my_employee
 
 from app.schemas.employee import (
     EmployeeCreateRequest,
@@ -30,9 +32,6 @@ router = APIRouter(
 )
 
 
-# ============================================================
-# CREATE EMPLOYEE
-# ============================================================
 
 @router.post(
     "",
@@ -87,42 +86,28 @@ def create_employee(
     return create_employee_account(employee_data)
 
 
-# ============================================================
-# GET MY EMPLOYEE PROFILE
-# ============================================================
-
 @router.get("/me")
 def get_my_employee_profile(
-    current_user=Depends(get_current_user)
+    current_user: dict = Depends(get_current_user)
 ):
-
     try:
+        user_id = current_user.get("id")
 
-        user_id = current_user["user_id"]
-
-        employee = get_employee_by_id(user_id)
-
-        if not employee:
+        if not user_id:
             raise HTTPException(
-                status_code=404,
-                detail="Employee not found"
+                status_code=401,
+                detail="User ID not found in token"
             )
 
-        return {
-            "employee": employee
-        }
+        employee = get_my_employee(user_id)
+
+        return employee
 
     except ValueError as error:
-
         raise HTTPException(
             status_code=404,
             detail=str(error)
         )
-
-
-# ============================================================
-# GET ALL EMPLOYEES
-# ============================================================
 
 @router.get(
     "/{employee_id}",
@@ -170,9 +155,7 @@ def get_employee_details(employee_id: int):
         "updated_at": employee[23]
     }
 
-# ============================================================
-# UPDATE EMPLOYEE
-# ============================================================
+
 
 
 @router.put("/{employee_id}")
@@ -243,9 +226,7 @@ def update_employee(
             status_code=400,
             detail=str(error)
         )
-    # ============================================================
-# UPDATE EMPLOYEE STATUS
-# ============================================================
+   
 
 @router.patch(
     "/{employee_id}/status",
@@ -273,4 +254,5 @@ def update_employee_status_api(
             status_code=400,
             detail=str(error)
         )
+
 

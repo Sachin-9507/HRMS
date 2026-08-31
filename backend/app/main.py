@@ -18,6 +18,10 @@ from app.api.v1.endpoints.designations import (
     router as designation_router
 )
 
+from app.api.v1.endpoints.me import (
+    router as me_router
+)
+
 app = FastAPI(
     title="HRMS API",
     version="1.0.0",
@@ -54,6 +58,11 @@ app.include_router(
 
 app.include_router(
     permission_router,
+    prefix="/api/v1"
+)
+
+app.include_router(
+    me_router,
     prefix="/api/v1"
 )
 
