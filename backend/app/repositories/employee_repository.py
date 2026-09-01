@@ -146,129 +146,112 @@ def get_all_employee(
 
 
 def get_employee_by_id(employee_id: int):
+
     query = """
         SELECT
-            e.id,
-            e.employee_code,
-            e.user_id,
-            e.first_name,
-            e.last_name,
-            e.email,
-            e.phone,
-            e.date_of_birth,
-            e.gender,
-            e.address,
-            e.city,
-            e.country,
-            e.postal_code,
-            e.joining_date,
-            e.employment_type,
-            e.department_id,
-            d.name AS department,
-            e.designation_id,
-            des.name AS designation,
-            e.manager_id,
-            e.salary,
-            e.status,
-            e.created_at,
-            e.updated_at
-        FROM employees e
-
-        LEFT JOIN departments d
-            ON d.id = e.department_id
-
-        LEFT JOIN designations des
-            ON des.id = e.designation_id
-
-        WHERE e.id = %s
-
-        LIMIT 1;
-    """
-
-    with get_cursor() as cursor:
-        cursor.execute(
-            query,
-            (employee_id,)
-        )
-        return cursor.fetchone()
-
-
-def update_employee(
-    employee_id,
-    first_name,
-    last_name,
-    phone,
-    date_of_birth,
-    gender,
-    address,
-    city,
-    state,
-    country,
-    postal_code,
-    department_id,
-    designation_id,
-    manager_id,
-    salary,
-    employment_type,
-    status,
-    
-):
-    query = """
-        UPDATE employees
-        SET
-            first_name = %s,
-            last_name = %s,
-            phone = %s,
-            date_of_birth = %s,
-            gender = %s,
-            address = %s,
-            city = %s,
-            state = %s,
-            country = %s,
-            postal_code = %s,
-            department_id = %s,
-            designation_id = %s,
-            manager_id = %s,
-            salary = %s,
-            employment_type = %s,
-            status = %s,
-           
-            updated_at = CURRENT_TIMESTAMP
-        WHERE id = %s
-
-        RETURNING
             id,
+            user_id,
             employee_code,
             first_name,
             last_name,
             email,
+            phone,
+            date_of_birth
+        FROM employees
+        WHERE id = %s;
+    """
+
+    with get_cursor() as cursor:
+        cursor.execute(query, (employee_id,))
+        return cursor.fetchone()
+
+
+def update_employee(
+    cursor,
+    employee_id: int,
+    data: dict
+):
+
+    allowed_fields = {
+        "first_name",
+        "last_name",
+        "phone",
+        "date_of_birth",
+        "gender",
+        "address",
+        "city",
+        "state",
+        "country",
+        "postal_code",
+        "joining_date",
+        "department_id",
+        "designation_id",
+        "manager_id",
+        "salary",
+        "employment_type",
+        "status",
+    }
+
+    fields = []
+    values = []
+
+    for field, value in data.items():
+
+        if field in allowed_fields:
+
+            fields.append(
+                f"{field} = %s"
+            )
+
+            values.append(value)
+
+    if not fields:
+        return None
+
+    fields.append(
+        "updated_at = CURRENT_TIMESTAMP"
+    )
+
+    query = f"""
+        UPDATE employees
+        SET
+            {", ".join(fields)}
+        WHERE id = %s
+        RETURNING
+            id,
+            employee_code,
+            user_id,
+            first_name,
+            last_name,
+            email,
+            phone,
+            date_of_birth,
+            gender,
+            address,
+            city,
+            state,
+            country,
+            postal_code,
+            joining_date,
+            employment_type,
+            department_id,
+            designation_id,
+            manager_id,
+            salary,
             status,
+            created_at,
             updated_at;
     """
 
-    values = (
-        first_name,
-        last_name,
-        phone,
-        date_of_birth,
-        gender,
-        address,
-        city,
-        state,
-        country,
-        postal_code,
-        department_id,
-        designation_id,
-        manager_id,
-        salary,
-        employment_type,
-        status,
-        employee_id,
+    values.append(employee_id)
+
+    cursor.execute(
+        query,
+        tuple(values)
     )
 
-    with get_cursor() as cursor:
-        cursor.execute(query, values)
-        return cursor.fetchone()
+    return cursor.fetchone()
+
 
 
 def deactivate_employee(employee_id: int):

@@ -19,7 +19,7 @@ from app.repositories.employee_repository import (
     get_employee_cursor,
     get_employee_by_id_cursor,
     get_employee_for_update_cursor,
-    update_employee,
+    update_employee as repository_update_employee,
     update_employee_status
 )
 
@@ -377,20 +377,22 @@ def update_employee(
 
     with transaction() as cursor:
 
-        print("1. Before employee lookup:",
-              cursor.closed,
-              cursor.connection.closed)
-
-        employee = (
-            get_employee_for_update_cursor(
-                cursor,
-                employee_id
-            )
+        print(
+            "1. Before employee lookup:",
+            cursor.closed,
+            cursor.connection.closed
         )
 
-        print("2. After employee lookup:",
-              cursor.closed,
-              cursor.connection.closed)
+        employee = get_employee_for_update_cursor(
+            cursor,
+            employee_id
+        )
+
+        print(
+            "2. After employee lookup:",
+            cursor.closed,
+            cursor.connection.closed
+        )
 
         if not employee:
             raise ValueError(
@@ -399,7 +401,10 @@ def update_employee(
 
         user_id = employee[1]
 
+        # -------------------------
         # Email validation
+        # -------------------------
+
         if "email" in data:
 
             existing_user = (
@@ -410,16 +415,15 @@ def update_employee(
                 )
             )
 
-            print("3. After email validation:",
-                  cursor.closed,
-                  cursor.connection.closed)
-
             if existing_user:
                 raise ValueError(
                     "Email is already used by another user"
                 )
 
+        # -------------------------
         # Department validation
+        # -------------------------
+
         if "department_id" in data:
 
             validate_department(
@@ -427,11 +431,10 @@ def update_employee(
                 data["department_id"]
             )
 
-            print("4. After department validation:",
-                  cursor.closed,
-                  cursor.connection.closed)
-
+        # -------------------------
         # Designation validation
+        # -------------------------
+
         if "designation_id" in data:
 
             validate_designation(
@@ -439,16 +442,11 @@ def update_employee(
                 data["designation_id"]
             )
 
-            print("5. After designation validation:",
-                  cursor.closed,
-                  cursor.connection.closed)
-
+        # -------------------------
         # Manager validation
-        if "manager_id" in data:
+        # -------------------------
 
-            print("6. Before manager validation:",
-                  cursor.closed,
-                  cursor.connection.closed)
+        if "manager_id" in data:
 
             if data["manager_id"] == employee_id:
                 raise ValueError(
@@ -460,9 +458,48 @@ def update_employee(
                 data["manager_id"]
             )
 
-            print("7. After manager validation:",
-                  cursor.closed,
-                  cursor.connection.closed)
+        # -------------------------
+        # Employment type
+        # -------------------------
+
+        if "employment_type" in data:
+
+            data["employment_type"] = (
+                validate_employment_type(
+                    data["employment_type"]
+                )
+            )
+
+        # -------------------------
+        # Update employee
+        # -------------------------
+
+        updated_employee = (
+            repository_update_employee(
+                cursor,
+                employee_id,
+                data
+            )
+        )
+
+        if not updated_employee:
+            raise ValueError(
+                "Employee update failed"
+            )
+
+        # -------------------------
+        # Sync user email
+        # -------------------------
+
+        if "email" in data:
+
+            update_user_email_cursor(
+                cursor,
+                user_id,
+                data["email"]
+            )
+
+        return updated_employee
 
             
 def update_employee_status(

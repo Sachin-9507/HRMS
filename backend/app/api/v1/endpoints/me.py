@@ -9,13 +9,16 @@ from app.auth.rbac import require_permission
 from app.schemas.me import (
     MyProfileResponse,
     MyProfileUpdateRequest,
-    MyEmployeeResponse
+    MyEmployeeResponse,
+    MyEmployeeUpdateRequest
+    
 )
 
 from app.services.employee_service import (
     create_employee_account,
     list_employees,
     update_employee
+
 )
 
 from app.services.me_service import (
@@ -124,7 +127,7 @@ def update_my_profile(
 )
 
 @router.put(
-    "",
+    "/employee",
     dependencies=[
         Depends(
             require_permission(
@@ -133,6 +136,26 @@ def update_my_profile(
         )
     ]
 )
+def update_my_employee_endpoint(
+    data: MyEmployeeUpdateRequest,
+    current_user=Depends(
+        get_current_user
+    )
+):
+
+    try:
+
+        return MyEmployeeUpdateRequest(
+            current_user["id"],
+            data
+        )
+
+    except ValueError as error:
+
+        raise HTTPException(
+            status_code=400,
+            detail=str(error)
+        )
 
 @router.get(
     "/employee",
@@ -146,3 +169,29 @@ def update_my_profile(
 )
 def get_employees():
     return list_employees()
+
+@router.put(
+    "/employee",
+)
+def update_my_employee_endpoint(
+    data: MyEmployeeUpdateRequest,
+    current_user=Depends(
+        get_current_user
+    )
+):
+
+    try:
+
+        return MyEmployeeUpdateRequest(
+            current_user["id"],
+            data
+        )
+
+    except ValueError as error:
+
+        raise HTTPException(
+            status_code=400,
+            detail=str(error)
+        )
+
+    

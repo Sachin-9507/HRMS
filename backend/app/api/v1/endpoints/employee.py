@@ -14,7 +14,7 @@ from app.repositories.employee_repository import (
 from app.services.employee_service import (
     create_employee_account,
     list_employees,
-    update_employee
+    update_employee as service_update_employee
 )
 
 from app.services.me_service import get_my_employee
@@ -204,7 +204,7 @@ def update_employee(
         )
 
     try:
-        updated_employee = update_employee(
+        updated_employee = service_update_employee(
             employee_id,
             data
         )
@@ -226,7 +226,7 @@ def update_employee(
             status_code=400,
             detail=str(error)
         )
-   
+
 
 @router.patch(
     "/{employee_id}/status",
