@@ -16,7 +16,7 @@ def require_permission(permission: str):
 
         user_id = int(
             current_user["id"]
-        ) 
+        )
 
         permissions = get_user_permissions(
             user_id
