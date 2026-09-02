@@ -186,3 +186,200 @@ def get_my_attendance_cursor(
     )
 
     return cursor.fetchall()
+
+def get_admin_attendance_cursor(
+    cursor,
+    attendance_date=None,
+    employee_id=None,
+    status=None,
+    limit=50,
+    offset=0
+):
+
+    query = """
+        SELECT
+            a.id,
+            a.employee_id,
+            e.employee_code,
+            e.first_name,
+            e.last_name,
+            a.attendance_date,
+            a.check_in,
+            a.check_out,
+            a.status,
+            a.working_minutes,
+            a.remarks,
+            a.created_at,
+            a.updated_at
+
+        FROM attendance a
+
+        JOIN employees e
+            ON e.id = a.employee_id
+
+        WHERE 1 = 1
+    """
+
+    params = []
+
+    if attendance_date is not None:
+
+        query += """
+            AND a.attendance_date = %s
+        """
+
+        params.append(
+            attendance_date
+        )
+
+    if employee_id is not None:
+
+        query += """
+            AND a.employee_id = %s
+        """
+
+        params.append(
+            employee_id
+        )
+
+    if status is not None:
+
+        query += """
+            AND a.status = %s
+        """
+
+        params.append(
+            status
+        )
+
+    query += """
+        ORDER BY
+            a.attendance_date DESC,
+            a.id DESC
+
+        LIMIT %s
+        OFFSET %s
+    """
+
+    params.extend([
+        limit,
+        offset
+    ])
+
+    cursor.execute(
+        query,
+        params
+    )
+
+    return cursor.fetchall()
+
+def get_admin_attendance_by_id_cursor(
+    cursor,
+    attendance_id: int
+):
+
+    query = """
+        SELECT
+            a.id,
+            a.employee_id,
+            e.employee_code,
+            e.first_name,
+            e.last_name,
+            a.attendance_date,
+            a.check_in,
+            a.check_out,
+            a.status,
+            a.working_minutes,
+            a.remarks,
+            a.created_at,
+            a.updated_at
+
+        FROM attendance a
+
+        JOIN employees e
+            ON e.id = a.employee_id
+
+        WHERE a.id = %s
+
+        LIMIT 1
+    """
+
+    cursor.execute(
+        query,
+        (attendance_id,)
+    )
+
+    return cursor.fetchone()
+
+
+def update_admin_attendance_cursor(
+    cursor,
+    attendance_id: int,
+    data: dict
+):
+
+    allowed_fields = {
+        "check_in",
+        "check_out",
+        "status",
+        "remarks"
+    }
+
+    fields = []
+    values = []
+
+    for field, value in data.items():
+
+        if field not in allowed_fields:
+            continue
+
+        fields.append(
+            f"{field} = %s"
+        )
+
+        values.append(value)
+
+    if not fields:
+        return None
+
+    fields.append(
+        """
+        working_minutes =
+            CASE
+                WHEN check_in IS NOT NULL
+                AND check_out IS NOT NULL
+                THEN EXTRACT(
+                    EPOCH FROM (
+                        check_out - check_in
+                    )
+                ) / 60
+                ELSE 0
+            END
+        """
+    )
+
+    fields.append(
+        "updated_at = CURRENT_TIMESTAMP"
+    )
+
+    query = f"""
+        UPDATE attendance
+
+        SET
+            {", ".join(fields)}
+
+        WHERE id = %s
+
+        RETURNING id
+    """
+
+    values.append(
+        attendance_id
+    )
+
+    cursor.execute(
+        query,
+        values
+    )
+
+    return cursor.fetchone()
