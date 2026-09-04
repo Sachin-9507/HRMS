@@ -30,6 +30,21 @@ from app.api.v1.endpoints.admin_attendance import (
     router as admin_attendance_router
 )
 
+from app.api.v1.endpoints.leaves import router as leaves_router
+
+from app.api.v1.endpoints.admin_leaves import (
+    router as admin_leaves_router
+)
+
+from app.api.v1.endpoints.dashboard import (
+    router as dashboard_router,
+)
+
+from app.api.v1.endpoints.admin_dashboard import (
+    router as admin_dashboard_router,
+)
+
+
 app = FastAPI(
     title="HRMS API",
     version="1.0.0",
@@ -82,6 +97,28 @@ app.include_router(
 app.include_router(
     admin_attendance_router,
     prefix="/api/v1"
+)
+
+
+app.include_router(
+    leaves_router,
+    prefix="/api/v1"
+)
+
+app.include_router(
+    admin_leaves_router,
+    prefix="/api/v1"
+)
+
+
+app.include_router(
+    dashboard_router,
+    prefix="/api/v1",
+)
+
+app.include_router(
+    admin_dashboard_router,
+    prefix="/api/v1",
 )
 
 
