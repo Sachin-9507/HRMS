@@ -76,3 +76,37 @@ class AdminDashboardResponse(BaseModel):
     attendance_statistics: AttendanceStatisticsResponse
     leave_statistics: LeaveStatisticsResponse
     recent_leave_requests: list[RecentLeaveRequest]
+
+
+class AttendanceReportResponse(BaseModel):
+    id: int
+    employee_id: int
+    employee_code: str
+    first_name: str
+    last_name: str
+    attendance_date: date
+    check_in: datetime | None
+    check_out: datetime | None
+    status: str
+    working_minutes: int
+    remarks: str | None
+
+
+class LeaveReportResponse(BaseModel):
+    id: int
+    employee_id: int
+    employee_code: str
+    first_name: str
+    last_name: str
+    leave_type_id: int
+    leave_type_code: str
+    leave_type_name: str
+    start_date: date
+    end_date: date
+    total_days: Decimal
+    reason: str
+    status: str
+    admin_remarks: str | None
+    reviewed_by: int | None
+    reviewed_at: datetime | None
+    created_at: datetime

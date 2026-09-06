@@ -6,6 +6,8 @@ from fastapi import HTTPException, status
 from app.repositories import leave_repository
 
 
+
+
 def calculate_total_days(
     start_date: date,
     end_date: date

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query
 
 from app.auth.dependencies import get_current_user
 from app.auth.rbac import require_permission
-from app.schemas.leave import AdminLeaveResponse, LeaveRejectRequest
+from app.schemas.leave import AdminLeaveResponse
 from app.services import leave_service
 
 router = APIRouter(
@@ -22,11 +22,11 @@ def get_all_leaves_api(
         default=None,
         alias="status"
     ),
-    
 ):
     return leave_service.get_all_leaves(
         status_filter=status_filter
     )
+
 
 @router.get(
     "/{leave_id}",
@@ -45,6 +45,7 @@ def get_leave(
     return leave_service.get_admin_leave(
         leave_id
     )
+
 
 @router.post(
     "/{leave_id}/approve",
@@ -68,6 +69,7 @@ def approve_leave(
         reviewer_id=current_user["user_id"]
     )
 
+
 @router.post(
     "/{leave_id}/reject",
     response_model=AdminLeaveResponse,
@@ -81,7 +83,11 @@ def approve_leave(
 )
 def reject_leave(
     leave_id: int,
-    request: LeaveRejectRequest,
+    admin_remarks: str = Query(
+        ...,
+        min_length=1,
+        max_length=1000
+    ),
     current_user=Depends(
         get_current_user
     )
@@ -89,5 +95,5 @@ def reject_leave(
     return leave_service.reject_leave(
         leave_id=leave_id,
         reviewer_id=current_user["user_id"],
-        admin_remarks=request.admin_remarks
+        admin_remarks=admin_remarks
     )

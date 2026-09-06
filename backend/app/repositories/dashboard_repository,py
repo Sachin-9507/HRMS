@@ -1,0 +1,301 @@
+from app.database.connection import get_connection
+
+
+class DashboardRepository:
+
+    @staticmethod
+    def _row_to_dict(cursor, row):
+        if row is None:
+            return None
+
+        columns = [column.name for column in cursor.description]
+
+        return dict(zip(columns, row))
+
+    @staticmethod
+    def get_today_attendance(employee_id):
+        conn = get_connection()
+
+        try:
+            cursor = conn.cursor()
+
+            cursor.execute(
+                """
+                SELECT
+                    attendance_date,
+                    check_in,
+                    check_out,
+                    status,
+                    working_minutes,
+                    remarks
+                FROM attendance
+                WHERE employee_id = %s
+                  AND attendance_date = CURRENT_DATE
+                LIMIT 1
+                """,
+                (employee_id,),
+            )
+
+            row = cursor.fetchone()
+
+            return DashboardRepository._row_to_dict(
+                cursor,
+                row
+            )
+
+        finally:
+            conn.close()
+
+    @staticmethod
+    def get_leave_summary(employee_id):
+        conn = get_connection()
+
+        try:
+            cursor = conn.cursor()
+
+            cursor.execute(
+                """
+                SELECT
+                    COALESCE(SUM(allocated_days), 0)
+                        AS total_allocated,
+
+                    COALESCE(SUM(used_days), 0)
+                        AS total_used,
+
+                    COALESCE(
+                        SUM(allocated_days - used_days),
+                        0
+                    ) AS total_remaining
+
+                FROM leave_balances
+                WHERE employee_id = %s
+                  AND leave_year = EXTRACT(
+                      YEAR FROM CURRENT_DATE
+                  )
+                """,
+                (employee_id,),
+            )
+
+            row = cursor.fetchone()
+
+            return DashboardRepository._row_to_dict(
+                cursor,
+                row
+            )
+
+        finally:
+            conn.close()
+
+    @staticmethod
+    def get_recent_leaves(employee_id, limit=5):
+        conn = get_connection()
+
+        try:
+            cursor = conn.cursor()
+
+            cursor.execute(
+                """
+                SELECT
+                    lr.id AS id,
+                    lt.code AS leave_type_code,
+                    lt.name AS leave_type_name,
+                    lr.start_date AS start_date,
+                    lr.end_date AS end_date,
+                    lr.total_days AS total_days,
+                    lr.status AS status
+
+                FROM leave_requests lr
+
+                INNER JOIN leave_types lt
+                    ON lt.id = lr.leave_type_id
+
+                WHERE lr.employee_id = %s
+
+                ORDER BY lr.created_at DESC
+
+                LIMIT %s
+                """,
+                (
+                    employee_id,
+                    limit,
+                ),
+            )
+
+            rows = cursor.fetchall()
+
+            return [
+                DashboardRepository._row_to_dict(
+                    cursor,
+                    row
+                )
+                for row in rows
+            ]
+
+        finally:
+            conn.close()
+
+    @staticmethod
+    def get_employee_statistics():
+        conn = get_connection()
+
+        try:
+            cursor = conn.cursor()
+
+            cursor.execute(
+                """
+                SELECT
+                    COUNT(*) AS total_employees,
+
+                    COUNT(*) FILTER (
+                        WHERE status = 'ACTIVE'
+                    ) AS active_employees,
+
+                    COUNT(*) FILTER (
+                        WHERE status <> 'ACTIVE'
+                    ) AS inactive_employees
+
+                FROM employees
+                """
+            )
+
+            row = cursor.fetchone()
+
+            return DashboardRepository._row_to_dict(
+                cursor,
+                row
+            )
+
+        finally:
+            conn.close()
+
+    @staticmethod
+    def get_attendance_statistics():
+        conn = get_connection()
+
+        try:
+            cursor = conn.cursor()
+
+            cursor.execute(
+                """
+                SELECT
+                    COUNT(*) FILTER (
+                        WHERE status = 'PRESENT'
+                    ) AS present_today,
+
+                    COUNT(*) FILTER (
+                        WHERE check_in IS NOT NULL
+                    ) AS checked_in_today,
+
+                    COUNT(*) FILTER (
+                        WHERE check_out IS NOT NULL
+                    ) AS checked_out_today,
+
+                    COUNT(*) FILTER (
+                        WHERE check_in IS NULL
+                    ) AS not_checked_in_today
+
+                FROM attendance
+
+                WHERE attendance_date = CURRENT_DATE
+                """
+            )
+
+            row = cursor.fetchone()
+
+            return DashboardRepository._row_to_dict(
+                cursor,
+                row
+            )
+
+        finally:
+            conn.close()
+
+    @staticmethod
+    def get_leave_statistics():
+        conn = get_connection()
+
+        try:
+            cursor = conn.cursor()
+
+            cursor.execute(
+                """
+                SELECT
+                    COUNT(*) FILTER (
+                        WHERE status = 'PENDING'
+                    ) AS pending,
+
+                    COUNT(*) FILTER (
+                        WHERE status = 'APPROVED'
+                    ) AS approved,
+
+                    COUNT(*) FILTER (
+                        WHERE status = 'REJECTED'
+                    ) AS rejected,
+
+                    COUNT(*) FILTER (
+                        WHERE status = 'CANCELLED'
+                    ) AS cancelled
+
+                FROM leave_requests
+                """
+            )
+
+            row = cursor.fetchone()
+
+            return DashboardRepository._row_to_dict(
+                cursor,
+                row
+            )
+
+        finally:
+            conn.close()
+
+    @staticmethod
+    def get_recent_leave_requests(limit=10):
+        conn = get_connection()
+
+        try:
+            cursor = conn.cursor()
+
+            cursor.execute(
+                """
+                SELECT
+                    lr.id AS id,
+                    e.id AS employee_id,
+                    e.employee_code AS employee_code,
+                    e.first_name AS first_name,
+                    e.last_name AS last_name,
+                    lt.code AS leave_type_code,
+                    lt.name AS leave_type_name,
+                    lr.start_date AS start_date,
+                    lr.end_date AS end_date,
+                    lr.total_days AS total_days,
+                    lr.status AS status
+
+                FROM leave_requests lr
+
+                INNER JOIN employees e
+                    ON e.id = lr.employee_id
+
+                INNER JOIN leave_types lt
+                    ON lt.id = lr.leave_type_id
+
+                ORDER BY lr.created_at DESC
+
+                LIMIT %s
+                """,
+                (limit,),
+            )
+
+            rows = cursor.fetchall()
+
+            return [
+                DashboardRepository._row_to_dict(
+                    cursor,
+                    row
+                )
+                for row in rows
+            ]
+
+        finally:
+            conn.close()

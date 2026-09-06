@@ -44,6 +44,14 @@ from app.api.v1.endpoints.admin_dashboard import (
     router as admin_dashboard_router,
 )
 
+from app.api.v1.endpoints.reports import (
+    router as reports_router,
+)
+
+from app.api.v1.endpoints.audit import (
+    router as audit_router,
+)
+
 
 app = FastAPI(
     title="HRMS API",
@@ -118,6 +126,16 @@ app.include_router(
 
 app.include_router(
     admin_dashboard_router,
+    prefix="/api/v1",
+)
+
+app.include_router(
+    reports_router,
+    prefix="/api/v1",
+)
+
+app.include_router(
+    audit_router,
     prefix="/api/v1",
 )
 
