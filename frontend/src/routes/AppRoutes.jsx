@@ -35,6 +35,26 @@ import AuditLogList from "../pages/admin/audit/AuditLogList";
 
 import NotFound from "../pages/NotFound";
 
+
+import Profile from "../pages/user/Profile";
+
+import AttendanceToday
+  from "../pages/user/attendance/AttendanceToday";
+
+import AttendanceHistory
+  from "../pages/user/attendance/AttendanceHistory";
+
+import LeaveBalance
+  from "../pages/user/leaves/LeaveBalance";
+
+import LeaveApply
+  from "../pages/user/leaves/LeaveApply";
+
+
+import LeaveDetails
+  from "../pages/user/leaves/LeaveDetails";
+
+
 function AppRoutes() {
   return (
     <Routes>
@@ -152,9 +172,50 @@ function AppRoutes() {
       <Route
         path="*"
         element={<NotFound />}
+
       />
+      <Route
+  path="/user/dashboard"
+  element={<UserDashboard />}
+/>
+
+<Route
+  path="/user/profile"
+  element={<Profile />}
+/>
+
+<Route
+  path="/user/attendance/today"
+  element={<AttendanceToday />}
+/>
+
+<Route
+  path="/user/attendance/history"
+  element={<AttendanceHistory />}
+/>
+
+<Route
+  path="/user/leaves/balance"
+  element={<LeaveBalance />}
+/>
+
+<Route
+  path="/user/leaves"
+  element={<LeaveList />}
+/>
+
+<Route
+  path="/user/leaves/apply"
+  element={<LeaveApply />}
+/>
+
+<Route
+  path="/user/leaves/:leaveId"
+  element={<LeaveDetails />}
+/>
     </Routes>
   );
 }
 
 export default AppRoutes;
+
