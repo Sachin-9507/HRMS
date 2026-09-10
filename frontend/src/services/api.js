@@ -1,24 +1,67 @@
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
+import {
+  getAccessToken,
+  removeAccessToken,
+} from "../utils/storage";
 
-export async function apiRequest(endpoint, options = {}) {
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
-    ...options,
-  });
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  "http://localhost:8000/api/v1";
+
+
+export async function apiRequest(
+  endpoint,
+  options = {}
+) {
+  const token =
+    getAccessToken();
+
+  const headers = {
+    "Content-Type": "application/json",
+    ...(options.headers || {}),
+  };
+
+  if (token) {
+    headers.Authorization =
+      `Bearer ${token}`;
+  }
+
+  const response =
+    await fetch(
+      `${API_BASE_URL}${endpoint}`,
+      {
+        method: "GET",
+        ...options,
+        headers,
+      }
+    );
+
 
   let data = null;
 
-  try {
+  const contentType =
+    response.headers.get(
+      "content-type"
+    );
+
+  if (
+    contentType &&
+    contentType.includes(
+      "application/json"
+    )
+  ) {
     data = await response.json();
-  } catch {
-    data = null;
   }
 
+
   if (!response.ok) {
+
+    if (
+      response.status === 401
+    ) {
+      removeAccessToken();
+    }
+
     const message =
       data?.detail ||
       data?.message ||
@@ -27,7 +70,14 @@ export async function apiRequest(endpoint, options = {}) {
     throw new Error(message);
   }
 
+
   return data;
 }
+
+
+export {
+  API_BASE_URL
+};
+
 
 export default apiRequest;

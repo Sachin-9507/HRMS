@@ -1,5 +1,5 @@
 from app.database.db import get_cursor
-from app.auth.password import hash_password 
+
 
 
 def get_user_by_email(email):
@@ -219,7 +219,6 @@ def get_latest_otp(
             )
         )
         return cursor.fetchone()
-
 
 def mark_otp_used(
     otp_id: int
@@ -485,7 +484,7 @@ def get_user_by_email_cursor(
 
     return cursor.fetchone()
 
-from app.database.db import get_cursor
+
 
 
 def create_user_cursor(

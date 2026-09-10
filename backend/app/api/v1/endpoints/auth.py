@@ -1,16 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 import json
-from pydantic import BaseModel, Field
 from pyotp import TOTP, random_base32
 
 from core.deps import get_current_user
-from app.schemas.auth import (
-    RegisterRequest,
-    LoginRequest,
-    Verify2FARequest
+
+from app.auth.jwt import (
+    create_access_token,
+    create_refresh_token
 )
 
-from app.services.auth_service import ( 
+from app.services.auth_service import (
     register_user,
     start_login,
     verify_login_2fa,
@@ -22,23 +21,35 @@ from app.services.auth_service import (
 )
 
 
-def generate_secret() -> str:
-    return random_base32()
-
-def verify_totp(secret: str, code: str) -> bool:
-    return TOTP(secret).verify(code)
-
-def get_provisioning_uri(email: str, secret: str, issuer: str) -> str:
-    return TOTP(secret).provisioning_uri(name=email, issuer_name=issuer)
-
-
 router = APIRouter(
     prefix="/Auth",
     tags=["Authentication"]
 )
 
 
-@router.post("/register", summary=" ")
+def generate_secret() -> str:
+    return random_base32()
+
+
+def verify_totp(secret: str, code: str) -> bool:
+    return TOTP(secret).verify(code)
+
+
+def get_provisioning_uri(
+    email: str,
+    secret: str,
+    issuer: str
+) -> str:
+
+    return TOTP(secret).provisioning_uri(
+        name=email,
+        issuer_name=issuer
+    )
+
+
+# ---------------- REGISTER ----------------
+
+@router.post("/register")
 def register(
     email: str,
     password: str,
@@ -46,6 +57,7 @@ def register(
     last_name: str,
     phone: str | None = None
 ):
+
     return register_user(
         email=email,
         password=password,
@@ -54,48 +66,82 @@ def register(
         phone=phone
     )
 
-    return {
-        "message": "User registered successfully",
-        "user": {
-            "id": user[0],
-            "email": user[1],
-            "first_name": user[2],
-            "last_name": user[3],
-            "phone": user[4],
-            "role_id": user[5]
+
+# ---------------- LOGIN ----------------
+
+@router.post("/login")
+def login(
+    email: str = Query(...),
+    password: str = Query(...)
+):
+
+    return start_login(
+        email=email,
+        password=password
+    )
+
+
+# ---------------- VERIFY OTP ----------------
+
+@router.post("/verify-otp")
+def verify_otp_api(
+    user_id: int = Query(...),
+    otp: str = Query(...)
+):
+
+    return  verify_login_2fa(
+        user_id=user_id,
+        code=otp
+    )
+
+    if not result:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid OTP"
+        )
+
+    access_token = create_access_token(
+        {
+            "sub": str(user_id)
         }
+    )
+
+    refresh_token = create_refresh_token(
+        {
+            "sub": str(user_id)
+        }
+    )
+
+    return {
+        "verified": True,
+        "message": "OTP verified successfully",
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer"
     }
 
 
-@router.post("/login", summary=" ")
-def login(
-    email: str,
-    password: str
-):
+# ---------------- VERIFY 2FA ----------------
 
-    
-
-        return start_login(
-            email=email,
-            password=password
-        )
-
-       
-
-@router.post("/verify-2fa", summary=" ")
+@router.post("/verify-2fa")
 def verify_2fa(
     user_id: int,
     code: str
 ):
+
     return verify_login_2fa(
         user_id=user_id,
         code=code
     )
 
-@router.post("/2fa/setup", summary=" ")
+
+# ---------------- 2FA SETUP ----------------
+
+@router.post("/2fa/setup")
 def setup_2fa(
     current_user=Depends(get_current_user)
 ):
+
     secret = generate_secret()
 
     save_two_factor_secret(
@@ -114,11 +160,15 @@ def setup_2fa(
         "provisioning_uri": uri
     }
 
-@router.post("/2fa/verify-setup", summary=" ")
+
+# ---------------- VERIFY 2FA SETUP ----------------
+
+@router.post("/2fa/verify-setup")
 def verify_2fa_setup(
     code: str,
     current_user=Depends(get_current_user)
 ):
+
     user = get_user_by_id(
         current_user[0]
     )

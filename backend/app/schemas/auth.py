@@ -1,8 +1,7 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 
 class RegisterRequest(BaseModel):
-
     email: EmailStr
     password: str
     first_name: str
@@ -11,15 +10,17 @@ class RegisterRequest(BaseModel):
 
 
 class LoginRequest(BaseModel):
-
     email: EmailStr
     password: str
 
 
-class Verify2FARequest(BaseModel):
+class VerifyOtpRequest(BaseModel):
+    user_id: int
+    otp: str = Field(
+        min_length=6,
+        max_length=6
+    )
 
-   
-    code: str
 
 class ChangePasswordRequest(BaseModel):
     current_password: str

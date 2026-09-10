@@ -17,7 +17,7 @@ from app.repositories.user_repository import (
 )
 
 
-LOGIN_2FA = "LOGIN_2FA"
+LOGIN_OTP = "LOGIN_OTP"
 
 
 def generate_login_otp(
@@ -25,7 +25,7 @@ def generate_login_otp(
 ):
     invalidate_previous_otps(
         user_id=user_id,
-        purpose=LOGIN_2FA
+        purpose=LOGIN_OTP
     )
 
     otp = generate_otp()
@@ -42,7 +42,7 @@ def generate_login_otp(
     create_otp(
         user_id=user_id,
         otp_hash=otp_hash,
-        purpose=LOGIN_2FA,
+        purpose=LOGIN_OTP,
         expires_at=expires_at
     )
 
@@ -87,7 +87,7 @@ def verify_login_otp(
 ):
     otp_record = get_latest_otp(
         user_id=user_id,
-        purpose=LOGIN_2FA
+        purpose=LOGIN_OTP
     )
 
     if not otp_record:
@@ -95,16 +95,13 @@ def verify_login_otp(
 
     (
         otp_id,
-        stored_user_id,
         otp_hash,
-        purpose,
         expires_at,
         attempts,
-        is_used,
-        created_at
+        id_used
     ) = otp_record
 
-    if is_used:
+    if id_used:
         return False, "OTP has already been used"
 
     current_time = datetime.now(timezone.utc)

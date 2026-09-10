@@ -24,7 +24,7 @@ from app.services.otp_service import create_login_otp, verify_login_otp
 
 
 
-from app.services.otp_service import LOGIN_2FA
+from app.services.otp_service import LOGIN_OTP
 
 
 from app.repositories.user_repository import(
@@ -197,33 +197,18 @@ def start_login(
 
     user_id = user[0]
     user_email = user[1]
-    is_2fa_enabled = user[9]
 
-    print("START_LOGIN IS RUNNING")
-    print("debug 2fa:", is_2fa_enabled)
-
-    if is_2fa_enabled:
-
-        # Generate and save OTP
-        create_login_otp(
-            user_id=user_id,
-            email=user_email
-        )
-
-        return {
-            "requires_2fa": True,
-            "user_id": user_id,
-            "message": "OTP sent for verification"
-        }
-
-    # 2FA disabled → normal login
-    tokens = create_login_tokens(user)
+    # Always generate OTP after successful
+    # email + password authentication.
+    create_login_otp(
+        user_id=user_id,
+        email=user_email
+    )
 
     return {
-        "requires_2fa": False,
+        "requires_otp": True,
         "user_id": user_id,
-        "message": "Login successful",
-        "tokens": tokens
+        "message": "OTP sent for verification"
     }
 
 def verify_login_2fa(
@@ -250,7 +235,7 @@ def verify_login_2fa(
 
     otp_record = get_latest_otp(
         user_id=user_id,
-        purpose=LOGIN_2FA,
+        purpose=LOGIN_OTP,
     )
 
     if not otp_record:
@@ -360,10 +345,10 @@ def verify_login_2fa(
     # -----------------------------------
 
     return {
-        "message": "2FA verification successful",
-        "access_token": access_token,
-        "token_type": "bearer",
-    }
+    "message": "OTP verification successful",
+    "access_token": access_token,
+    "token_type": "bearer",
+}
 
 def change_user_password(
     user_id: int,
