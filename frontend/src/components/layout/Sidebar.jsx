@@ -1,6 +1,42 @@
 import { NavLink } from "react-router-dom";
 
+import { useAuth } from "../../context/AuthContext";
+
+
+
 function Sidebar() {
+  const {
+  user,
+} = useAuth();
+
+  const isAdmin =
+  user?.role_name === "ADMIN";
+
+  const {
+  logout,
+} = useAuth();
+
+function handleLogout() {
+  logout();
+
+  navigate(
+    "/login",
+    { replace: true }
+  );
+}
+  
+  {isAdmin && (
+  <div className="sidebar-section">
+
+    <div className="sidebar-section-title">
+      Administration
+    </div>
+
+    {/* Admin navigation items */}
+
+  </div>
+)}
+
   return (
     <aside className="sidebar">
       <div className="sidebar-title">

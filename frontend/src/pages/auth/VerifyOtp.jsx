@@ -7,6 +7,8 @@ import ErrorMessage from "../../components/common/ErrorMessage";
 
 import { verifyOtp } from "../../services/auth";
 
+import { useAuth } from "../../context/AuthContext";
+import { getCurrentUser } from "../../services/user";
 
 function VerifyOtp() {
 
@@ -25,6 +27,9 @@ function VerifyOtp() {
   const [loading, setLoading] =
     useState(false);
 
+    const {
+  updateUser,
+} = useAuth();
 
   async function handleSubmit(
     event
@@ -38,14 +43,26 @@ function VerifyOtp() {
 
     try {
 
-      await verifyOtp(
-        otp
-      );
+      await verifyOtp(otp);
 
+const currentUser =
+  await getCurrentUser();
 
-      navigate(
-        "/user/dashboard"
-      );
+updateUser(currentUser);
+
+if (
+  currentUser.role_name === "ADMIN"
+) {
+  navigate(
+    "/admin/dashboard",
+    { replace: true }
+  );
+} else {
+  navigate(
+    "/user/dashboard",
+    { replace: true }
+  );
+}
 
     } catch (err) {
 

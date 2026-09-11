@@ -10,74 +10,57 @@ import {
   removeAccessToken,
 } from "../utils/storage";
 
+const AuthContext = createContext(null);
 
-const AuthContext =
-  createContext(null);
+export function AuthProvider({ children }) {
+  const [token, setToken] = useState(
+    getAccessToken()
+  );
 
+  const [user, setUser] = useState(null);
 
-export function AuthProvider({
-  children,
-}) {
+  const isAuthenticated = Boolean(token);
 
-  const [token, setToken] =
-    useState(
-      getAccessToken()
-    );
-
-
-  const isAuthenticated =
-    Boolean(token);
-
-
-  function updateToken(
-    newToken
-  ) {
+  function updateToken(newToken) {
     setToken(newToken);
   }
 
-
-  function logout() {
-
-    removeAccessToken();
-
-    setToken(null);
+  function updateUser(userData) {
+    setUser(userData);
   }
 
+  function logout() {
+    removeAccessToken();
+    setToken(null);
+    setUser(null);
+  }
 
   useEffect(() => {
-
     function handleStorageChange() {
-
-      setToken(
-        getAccessToken()
-      );
+      setToken(getAccessToken());
     }
-
 
     window.addEventListener(
       "storage",
       handleStorageChange
     );
 
-
     return () => {
-
       window.removeEventListener(
         "storage",
         handleStorageChange
       );
-
     };
-
   }, []);
-
 
   return (
     <AuthContext.Provider
       value={{
         token,
+        user,
         isAuthenticated,
         updateToken,
+        updateUser,
         logout,
       }}
     >
@@ -86,10 +69,6 @@ export function AuthProvider({
   );
 }
 
-
 export function useAuth() {
-
-  return useContext(
-    AuthContext
-  );
+  return useContext(AuthContext);
 }
