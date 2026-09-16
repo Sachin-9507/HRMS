@@ -2,6 +2,7 @@ from datetime import date
 from decimal import Decimal
 
 from app.database.connection import get_connection
+from app.services.audit_service import AuditService
 
 
 def get_leave_type(leave_type_id: int):
@@ -655,7 +656,19 @@ def approve_leave_request(
                 )
             )
 
+        AuditService.log(
+            user_id=reviewer_id,
+            action="APPROVE",
+            module="LEAVE",
+            entity_type="LEAVE",
+            entity_id=leave_id,
+            description=f"Leave {leave_id} approved",
+            status="SUCCESS",
+        )
+
         connection.commit()
+
+        return get_admin_leave_request(leave_id)
 
     except Exception:
         connection.rollback()
@@ -716,6 +729,19 @@ def reject_leave_request(
             )
 
         connection.commit()
+
+        AuditService.log(
+    user_id=reviewer_id,
+    action="REJECT",
+    module="LEAVE",
+    entity_type="LEAVE",
+    entity_id=leave_id,
+    description=f"Leave {leave_id} rejected",
+    new_data={
+        "admin_remarks": admin_remarks
+    },
+    status="SUCCESS",
+)
 
     except Exception:
         connection.rollback()

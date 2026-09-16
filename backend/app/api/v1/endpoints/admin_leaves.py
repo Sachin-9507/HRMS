@@ -14,7 +14,7 @@ router = APIRouter(
 @router.get(
     "",
     dependencies=[
-        Depends(require_permission("leave:read"))
+        Depends(require_permission("leave.read_all"))
     ]
 )
 def get_all_leaves_api(
@@ -34,7 +34,7 @@ def get_all_leaves_api(
     dependencies=[
         Depends(
             require_permission(
-                "leave:read_all"
+                "leave.read_all"
             )
         )
     ]
@@ -53,7 +53,7 @@ def get_leave(
     dependencies=[
         Depends(
             require_permission(
-                "leave:approve"
+                "leave.approve"
             )
         )
     ]
@@ -76,7 +76,7 @@ def approve_leave(
     dependencies=[
         Depends(
             require_permission(
-                "leave:reject"
+                "leave.reject"
             )
         )
     ]

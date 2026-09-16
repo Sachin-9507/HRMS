@@ -1,8 +1,6 @@
 import logging
 
-from app.repositories.audit_repository import (
-    AuditRepository,
-)
+from app.repositories.audit_repository import AuditRepository
 
 
 logger = logging.getLogger(__name__)
@@ -42,8 +40,5 @@ class AuditService:
             )
 
         except Exception:
-            logger.exception(
-                "Failed to create audit log"
-            )
-
+            logger.exception("Failed to create audit log")
             return None

@@ -36,7 +36,7 @@ router = APIRouter(
     dependencies=[
         Depends(
             require_permission(
-                "attendance:check_in"
+                "attendance.check_in"
             )
         )
     ]
@@ -67,7 +67,7 @@ def attendance_check_in(
     dependencies=[
         Depends(
             require_permission(
-                "attendance:check_out"
+                "attendance.check_out"
             )
         )
     ]
@@ -97,7 +97,7 @@ def attendance_check_out(
     dependencies=[
         Depends(
             require_permission(
-                "attendance:read"
+                "attendance.read_own"
             )
         )
     ]
@@ -118,7 +118,7 @@ def attendance_today(
     dependencies=[
         Depends(
             require_permission(
-                "attendance:read"
+                "attendance.read"
             )
         )
     ]

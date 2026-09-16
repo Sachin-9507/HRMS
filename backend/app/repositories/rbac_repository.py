@@ -1,11 +1,10 @@
 from app.database.db import get_cursor
 
 
-def get_user_permissions(user_id: int):
-
+def get_user_permissions(user_id):
     query = """
-        SELECT
-            p.name
+        SELECT DISTINCT
+            p.name AS permission_key
         FROM users u
         JOIN roles r
             ON r.id = u.role_id
@@ -15,12 +14,10 @@ def get_user_permissions(user_id: int):
             ON p.id = rp.permission_id
         WHERE u.id = %s
           AND u.is_active = TRUE
-          AND r.is_active = TRUE
-        ORDER BY p.name;
     """
 
     with get_cursor() as cursor:
         cursor.execute(query, (user_id,))
         rows = cursor.fetchall()
 
-    return [row[0] for row in rows]
+        return [row["permission_key"] for row in rows]
