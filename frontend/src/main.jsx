@@ -5,7 +5,11 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import "./index.css";
 
-import { AuthProvider } from "./context/AuthContext";
+import  AuthProvider  from "./context/AuthProvider";
+
+<AuthProvider>
+  <App />
+</AuthProvider>
 
 ReactDOM.createRoot(
   document.getElementById("root")

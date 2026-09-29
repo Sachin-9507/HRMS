@@ -1,3 +1,5 @@
+import json
+
 from app.database.connection import get_connection
 
 
@@ -62,16 +64,8 @@ class AuditRepository:
                     entity_type,
                     entity_id,
                     description,
-                    (
-                        None
-                        if old_data is None
-                        else __import__("json").dumps(old_data)
-                    ),
-                    (
-                        None
-                        if new_data is None
-                        else __import__("json").dumps(new_data)
-                    ),
+                    None if old_data is None else json.dumps(old_data),
+                    None if new_data is None else json.dumps(new_data),
                     ip_address,
                     user_agent,
                     status,
@@ -80,7 +74,6 @@ class AuditRepository:
             )
 
             audit_id = cursor.fetchone()[0]
-
             conn.commit()
 
             return audit_id
@@ -91,11 +84,6 @@ class AuditRepository:
 
         finally:
             conn.close()
-
-import json
-
-
-class AuditRepository:
 
     @staticmethod
     def create_with_cursor(

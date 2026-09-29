@@ -91,7 +91,27 @@ class AuditQueryRepository:
                 tuple(params),
             )
 
-            return cursor.fetchall()
+            rows = cursor.fetchall()
+
+            return [
+                {
+                    "id": row[0],
+                    "user_id": row[1],
+                    "action": row[2],
+                    "module": row[3],
+                    "entity_type": row[4],
+                    "entity_id": row[5],
+                    "description": row[6],
+                    "old_data": row[7],
+                    "new_data": row[8],
+                    "ip_address": row[9],
+                    "user_agent": row[10],
+                    "status": row[11],
+                    "error_message": row[12],
+                    "created_at": row[13],
+                }
+                for row in rows
+            ]
 
         finally:
             conn.close()

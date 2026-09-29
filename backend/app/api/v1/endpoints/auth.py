@@ -88,8 +88,7 @@ def verify_otp_api(
     user_id: int = Query(...),
     otp: str = Query(...)
 ):
-
-    return  verify_login_2fa(
+    result = verify_login_2fa(
         user_id=user_id,
         code=otp
     )
@@ -119,8 +118,6 @@ def verify_otp_api(
         "refresh_token": refresh_token,
         "token_type": "bearer"
     }
-
-
 # ---------------- VERIFY 2FA ----------------
 
 @router.post("/verify-2fa")

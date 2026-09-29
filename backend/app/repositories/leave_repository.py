@@ -731,17 +731,17 @@ def reject_leave_request(
         connection.commit()
 
         AuditService.log(
-    user_id=reviewer_id,
-    action="REJECT",
-    module="LEAVE",
-    entity_type="LEAVE",
-    entity_id=leave_id,
-    description=f"Leave {leave_id} rejected",
-    new_data={
-        "admin_remarks": admin_remarks
-    },
-    status="SUCCESS",
-)
+            user_id=reviewer_id,
+            action="REJECT",
+            module="LEAVE",
+            entity_type="LEAVE",
+            entity_id=leave_id,
+            description=f"Leave {leave_id} rejected",
+            new_data={
+                "admin_remarks": admin_remarks
+            },
+            status="SUCCESS",
+        )
 
     except Exception:
         connection.rollback()

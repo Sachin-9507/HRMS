@@ -101,8 +101,8 @@ def register_user(
 
 
 def authenticate_user(
-        email:str,
-        password:str
+    email: str,
+    password: str
 ):
 
     email = email.strip().lower()
@@ -115,23 +115,16 @@ def authenticate_user(
             detail="Invalid email or password"
         )
 
-    (
-        user_id,
-        user_email,
-        password_hash,
-        first_name,
-        last_name,
-        phone,
-        role_id,
-        is_active,
-        is_email_verified,
-        is_2fa_enabled,
-        failed_login_attempts,
-        locked_until,
-        last_login_at,
-        created_at,
-        updated_at,
-    ) = user
+    # Get values from dict row
+    user_id = user["id"]
+    user_email = user["email"]
+    password_hash = user["password_hash"]
+    is_active = user["is_active"]
+    locked_until = user["locked_until"]
+
+    # -----------------------------------
+    # CHECK ACCOUNT ACTIVE
+    # -----------------------------------
 
     if not is_active:
         raise HTTPException(
@@ -139,26 +132,43 @@ def authenticate_user(
             detail="Account is inactive"
         )
 
+    # -----------------------------------
+    # CHECK ACCOUNT LOCK
+    # -----------------------------------
+
     if locked_until is not None:
 
         current_time = datetime.now(timezone.utc)
 
-        if locked_until > current_time:
+        # If database returns string
+        if isinstance(locked_until, str):
+            locked_until = datetime.fromisoformat(
+                locked_until.replace("Z", "+00:00")
+            )
 
+        # If database returns naive datetime
+        if locked_until.tzinfo is None:
+            locked_until = locked_until.replace(
+                tzinfo=timezone.utc
+            )
+
+        if locked_until > current_time:
             raise HTTPException(
                 status_code=status.HTTP_423_LOCKED,
                 detail="Account is temporarily locked"
             )
 
-    if not verify_password(password, password_hash):
+    # -----------------------------------
+    # VERIFY PASSWORD
+    # -----------------------------------
 
+    if not verify_password(password, password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password"
         )
 
-    return user 
-
+    return user
 
 def create_login_tokens(user):
 
@@ -195,11 +205,9 @@ def start_login(
         password=password
     )
 
-    user_id = user[0]
-    user_email = user[1]
+    user_id = user["id"]
+    user_email = user["email"]
 
-    # Always generate OTP after successful
-    # email + password authentication.
     create_login_otp(
         user_id=user_id,
         email=user_email
@@ -244,11 +252,11 @@ def verify_login_2fa(
             detail="OTP not found",
         )
 
-    otp_id = otp_record[0]
-    otp_hash = otp_record[1]
-    expires_at = otp_record[2]
-    attempts = otp_record[3]
-    is_used = otp_record[4]
+    otp_id = otp_record["id"]
+    otp_hash = otp_record["otp_code_hash"]
+    expires_at = otp_record["expires_at"]
+    attempts = otp_record["attempts"]
+    is_used = otp_record["id_used"]
 
     # -----------------------------------
     # 2. CHECK OTP ALREADY USED
