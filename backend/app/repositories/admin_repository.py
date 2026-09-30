@@ -13,7 +13,7 @@ def get_all_users():
                 u.role_id,
                 u.is_active,
                 u.is_email_verified,
-                u.is_2fa_enabled,
+                u.is_otp_enabled,
                 u.failed_login_attempts,
                 u.locked_until,
                 u.last_login,
@@ -40,7 +40,8 @@ def get_user_details(
             r.name AS role, 
             u.is_active,
             u.is_email_verified,
-            u.is_2fa_enabled,
+            u.is_otp_enabled,
+            u.otp_secret,
             u.created_at,
             u.last_login_at
         FROM users u

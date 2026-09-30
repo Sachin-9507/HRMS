@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
+from core.config import settings
 from app.api.v1.endpoints import auth
 from app.api.v1.endpoints import admin
 from app.api.v1.endpoints.roles import router as roles_router
@@ -8,11 +8,15 @@ from app.api.v1.endpoints.employee import  router as employee_router
 from app.api.v1.endpoints.permissions import (
     router as permission_router
 )
-
+from app.middleware.security import SecurityHeadersMiddleware
 from app.api.v1.endpoints.departments import (
     router as department_router
 )
-
+from core.exceptions import AppException
+from core.exception_handlers import (
+    app_exception_handler,
+    unexpected_exception_handler,
+)
 
 from app.api.v1.endpoints.designations import (
     router as designation_router
@@ -61,11 +65,22 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
-    
+    allow_origins=settings.cors_origin_list,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
+)
+
+app.add_middleware(SecurityHeadersMiddleware)
+
+app.add_exception_handler(
+    AppException,
+    app_exception_handler,
+)
+
+app.add_exception_handler(
+    Exception,
+    unexpected_exception_handler,
 )
 
 app.include_router(

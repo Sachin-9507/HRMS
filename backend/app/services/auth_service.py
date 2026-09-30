@@ -1,6 +1,7 @@
 from fastapi import HTTPException, status
 from datetime import datetime, timezone
 import secrets
+from app.auth.password_policy import validate_password
 from app.auth.password import(
      hash_password,
       verify_password,
@@ -84,7 +85,7 @@ def register_user(
         )
 
     role_id = employee_role[0]
-
+    validate_password(password)
     password_hash = hash_password(password)
 
 
@@ -219,7 +220,7 @@ def start_login(
         "message": "OTP sent for verification"
     }
 
-def verify_login_2fa(
+def verify_login_otp(
     user_id: int,
     code: str,
 ):
@@ -227,7 +228,7 @@ def verify_login_2fa(
     Verify the OTP after successful password login.
 
     Flow:
-    1. Get latest LOGIN_2FA OTP
+    1. Get latest LOGIN_OTP
     2. Check OTP exists
     3. Check OTP is not already used
     4. Check OTP expiry

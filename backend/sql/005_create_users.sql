@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
     role_id BIGINT NOT NULL,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     is_email_verified BOOLEAN NOT NULL DEFAULT FALSE,
-    is_2fa_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    is_otp_enabled BOOLEAN NOT NULL DEFAULT TRUE,
     failed_login_attempts INT NOT NULL DEFAULT 0,
     locked_until TIMESTAMP WITH TIME ZONE,
     last_login TIMESTAMP WITH TIME ZONE,

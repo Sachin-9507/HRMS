@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
+from core.config import settings
+
 from app.auth.otp import (
     OTP_EXPIRE_MINUTES,
     OTP_MAX_ATTEMPTS,
@@ -33,11 +35,11 @@ def generate_login_otp(
     otp_hash = hash_otp(otp)
 
     expires_at = (
-        datetime.now(timezone.utc)
-        + timedelta(
-            minutes=OTP_EXPIRE_MINUTES
-        )
+    datetime.now(timezone.utc)
+    + timedelta(
+        minutes=settings.otp_expire_minutes
     )
+)
 
     create_otp(
         user_id=user_id,

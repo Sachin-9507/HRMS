@@ -14,7 +14,7 @@ def get_user_by_email(email):
             role_id,
             is_active,
             is_email_verified,
-            is_2fa_enabled,
+            is_otp_enabled,
             failed_login_attempts,
             locked_until,
             last_login,
@@ -54,7 +54,7 @@ def create_user(
       role_id,
       is_active,
       is_email_verified,
-      is_2fa_enabled,
+      is_otp_enabled,
       created_at;
   """
 
@@ -286,8 +286,8 @@ def get_user_by_id(user_id: int):
         role_id,
         is_active,
         is_email_verified,
-        is_2fa_enabled,
-        two_factor_secret,
+        is_otp_enabled,
+        otp_secret,
         failed_login_attempts,
         locked_until,
         last_login,
@@ -336,10 +336,10 @@ def get_user_auth_data(
             u.role_id,
             u.is_active,
             u.is_email_verified,
-            u.is_2fa_enabled,
-            u.two_factor_secret,
-            u.two_factor_verified,
-            u.two_factor_backup_codes,
+            u.is_otp_enabled,
+            u.otp_secret,
+            u.otp_verified,
+            u.otp_backup_codes,
             u.must_change_password
         FROM users u
         WHERE u.email = %s
@@ -434,17 +434,17 @@ def confirm_two_factor(
         UPDATE users
 
         SET
-            is_2fa_enabled = TRUE,
-            two_factor_verified = TRUE,
-            two_factor_backup_codes = %s
+            is_otp_enabled = TRUE,
+            otp_verified = TRUE,
+            otp_backup_codes = %s
 
         WHERE id = %s
 
         RETURNING
             id,
             email,
-            is_2fa_enabled,
-            two_factor_verified;
+            is_otp_enabled,
+            otp_verified;
     """
 
     with get_cursor() as cursor:
@@ -516,7 +516,7 @@ def create_user_cursor(
             role_id,
             is_active,
             is_email_verified,
-            is_2fa_enabled,
+            is_otp_enabled,
             created_at;
     """
 

@@ -7,7 +7,7 @@ import ErrorMessage from "../../components/common/ErrorMessage";
 
 import { verifyOtp } from "../../services/auth";
 
-import { useAuth } from "../../context/AuthContext";
+import  useAuth  from "../../context/useAuth";
 import { getCurrentUser } from "../../services/user";
 
 function VerifyOtp() {

@@ -1,64 +1,99 @@
 from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from jose import JWTError
 
 from app.auth.jwt import decode_access_token
 from app.database.db import get_cursor
 
-security = HTTPBearer()
+
+security = HTTPBearer(auto_error=True)
 
 
 def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: HTTPAuthorizationCredentials = Depends(security),
 ):
     token = credentials.credentials
 
-    payload = decode_access_token(token)
+    try:
+        payload = decode_access_token(token)
 
-    user_id = payload.get("sub")
+        user_id = payload.get("sub")
 
-    if not user_id:
+        if not user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid access token",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        try:
+            user_id = int(user_id)
+        except (TypeError, ValueError):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid access token",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        with get_cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT
+                    u.id,
+                    u.role_id,
+                    r.name AS role_name,
+                    e.id AS employee_id
+                FROM users u
+                JOIN roles r
+                    ON r.id = u.role_id
+                LEFT JOIN employees e
+                    ON e.user_id = u.id
+                WHERE u.id = %s
+                  AND u.is_active = TRUE
+                LIMIT 1
+                """,
+                (user_id,),
+            )
+
+            user = cursor.fetchone()
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid authentication credentials",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        if isinstance(user, dict):
+            return {
+                "id": user["id"],
+                "user_id": user["id"],
+                "role_id": user["role_id"],
+                "role_name": user["role_name"],
+                "employee_id": user["employee_id"],
+            }
+
+        return {
+            "id": user[0],
+            "user_id": user[0],
+            "role_id": user[1],
+            "role_name": user[2],
+            "employee_id": user[3],
+        }
+
+    except HTTPException:
+        raise
+
+    except (JWTError, ValueError, TypeError):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token"
+            detail="Invalid or expired access token",
+            headers={"WWW-Authenticate": "Bearer"},
         )
 
-    with get_cursor() as cursor:
-
-        cursor.execute(
-            """
-            SELECT
-                u.id,
-                u.email,
-                u.role_id,
-                u.is_active,
-                e.id AS employee_id
-            FROM users u
-            LEFT JOIN employees e
-                ON e.user_id = u.id
-            WHERE u.id = %s
-            LIMIT 1
-            """,
-            (int(user_id),)
-        )
-
-        user = cursor.fetchone()
-
-    if not user:
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found"
+            detail="Authentication failed",
+            headers={"WWW-Authenticate": "Bearer"},
         )
-
-    if not user["is_active"]:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User is inactive"
-        )
-
-    return {
-        "id": user["id"],
-        "user_id": user["id"],
-        "email": user["email"],
-        "role_id": user["role_id"],
-        "employee_id": user["employee_id"]
-    }
