@@ -40,6 +40,7 @@ def get_current_user(
                 """
                 SELECT
                     u.id,
+                    u.email,
                     u.role_id,
                     r.name AS role_name,
                     e.id AS employee_id
@@ -68,6 +69,7 @@ def get_current_user(
             return {
                 "id": user["id"],
                 "user_id": user["id"],
+                "email": user["email"],
                 "role_id": user["role_id"],
                 "role_name": user["role_name"],
                 "employee_id": user["employee_id"],
@@ -76,9 +78,10 @@ def get_current_user(
         return {
             "id": user[0],
             "user_id": user[0],
-            "role_id": user[1],
-            "role_name": user[2],
-            "employee_id": user[3],
+            "email": user[1],
+            "role_id": user[2],
+            "role_name": user[3],
+            "employee_id": user[4],
         }
 
     except HTTPException:

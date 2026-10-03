@@ -34,14 +34,14 @@ def test_get_current_user(monkeypatch):
         "id": 1,
         "email": "admin@example.com",
         "role_id": 1,
-        "is_active": True,
+        "role_name": "Admin",
         "employee_id": 10,
     }
 
     monkeypatch.setattr(
         dependencies,
         "decode_access_token",
-        lambda token: {"sub": "1", "type": "access"},
+        lambda token: {"sub": "1"},
     )
 
     monkeypatch.setattr(
@@ -61,6 +61,7 @@ def test_get_current_user(monkeypatch):
     assert result["user_id"] == 1
     assert result["email"] == "admin@example.com"
     assert result["role_id"] == 1
+    assert result["role_name"] == "Admin"
     assert result["employee_id"] == 10
 
 
@@ -78,11 +79,10 @@ def test_get_current_user_invalid_token(monkeypatch):
     )
 
     with pytest.raises(HTTPException) as exc:
-
         dependencies.get_current_user(credentials)
 
     assert exc.value.status_code == 401
-    assert exc.value.detail == "Invalid token"
+    assert exc.value.detail == "Invalid access token"
 
 
 def test_get_current_user_not_found(monkeypatch):
@@ -105,22 +105,13 @@ def test_get_current_user_not_found(monkeypatch):
     )
 
     with pytest.raises(HTTPException) as exc:
-
         dependencies.get_current_user(credentials)
 
     assert exc.value.status_code == 401
-    assert exc.value.detail == "User not found"
+    assert exc.value.detail == "Invalid authentication credentials"
 
 
 def test_get_current_user_inactive(monkeypatch):
-
-    fake_user = {
-        "id": 1,
-        "email": "inactive@example.com",
-        "role_id": 2,
-        "is_active": False,
-        "employee_id": 10,
-    }
 
     monkeypatch.setattr(
         dependencies,
@@ -128,10 +119,13 @@ def test_get_current_user_inactive(monkeypatch):
         lambda token: {"sub": "1"},
     )
 
+    # The SQL query contains:
+    # AND u.is_active = TRUE
+    # Therefore an inactive user should not be returned.
     monkeypatch.setattr(
         dependencies,
         "get_cursor",
-        lambda: FakeCursorContext(fake_user),
+        lambda: FakeCursorContext(None),
     )
 
     credentials = HTTPAuthorizationCredentials(
@@ -140,8 +134,7 @@ def test_get_current_user_inactive(monkeypatch):
     )
 
     with pytest.raises(HTTPException) as exc:
-
         dependencies.get_current_user(credentials)
 
     assert exc.value.status_code == 401
-    assert exc.value.detail == "User is inactive"
+    assert exc.value.detail == "Invalid authentication credentials"

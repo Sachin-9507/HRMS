@@ -4,11 +4,34 @@ from app.api.v1.endpoints.auth import router as auth_router
 from app.api.v1.endpoints.admin import router as admin_router
 from fastapi.openapi.utils import get_openapi
 
+from backend.app.database.db import get_cursor
+from core.logging_config import configure_logging
+import logging
+
+logger = logging.getLogger(__name__)
+configure_logging()
+
 app = FastAPI(
     title="HRMS API",
     version="0.1.0"
 )
+@app.get("/ready")
+def readiness():
+    try:
+        with get_cursor() as cursor:
+            cursor.execute("SELECT 1")
+            cursor.fetchone()
 
+        return {
+            "status": "ready"
+        }
+
+    except Exception:
+        raise HTTPException(
+            status_code=503,
+            detail="Database not ready"
+        )
+    
 app.include_router(
     auth_router,
     prefix="/api/v1"
